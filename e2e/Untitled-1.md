@@ -1,0 +1,1 @@
+https://supabase.com/dashboard/cli/login?session_id=aba79a04-9ad3-4f42-a799-8cc094d4212d&token_name=cli_innovarslabo@Mac_1770967592&public_key=042fb5b75093654de640714a797ea361c14053060d55b65ff0182ee5e12a4c799506b4d70e0ebd8b844bc40ed930a67d5fa7aefaa36c3e09c0ccc83c108bd2817f

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, startTransition } from 'react'
+import { useState, useEffect, useRef, startTransition } from 'react'
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 import { toast } from '@/hooks/use-toast'
@@ -148,6 +148,8 @@ export default function Dashboard() {
   const [activePage, setActivePage] = useState<string>('home')
   const [commandOpen, setCommandOpen] = useState(false)
   const [themeMounted, setThemeMounted] = useState(false)
+  const [pageSwitching, setPageSwitching] = useState(false)
+  const navTokenRef = useRef(0)
   const { resolvedTheme, setTheme } = useTheme()
   const formattedDate = themeMounted ? getFormattedDate() : ''
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
@@ -155,10 +157,32 @@ export default function Dashboard() {
 
   const navigateTo = (page: string) => {
     const nextPage = validPages.has(page) ? page : 'home'
-    prefetchPage(nextPage)
-    startTransition(() => setActivePage(nextPage))
+    if (nextPage === activePage) {
+      setSidebarOpen(false)
+      setCommandOpen(false)
+      return
+    }
+
+    // Close overlays immediately; keep the current page rendered until the next page module is loaded
+    // so the UI doesn't "jump" to the loading skeleton on navigation.
     setSidebarOpen(false)
     setCommandOpen(false)
+
+    const token = ++navTokenRef.current
+    setPageSwitching(true)
+
+    const loader = pageLoaders[nextPage]
+    void (async () => {
+      try {
+        await loader?.()
+      } catch {
+        // If preloading fails, still navigate; the dynamic page will render its fallback.
+      }
+
+      if (navTokenRef.current !== token) return
+      startTransition(() => setActivePage(nextPage))
+      setPageSwitching(false)
+    })()
   }
 
   const handleLogout = () => {
@@ -178,17 +202,11 @@ export default function Dashboard() {
     if (typeof window === 'undefined') return
 
     const params = new URLSearchParams(window.location.search)
-    const urlPage = params.get('page')
+    const rawUrlPage = params.get('page')
+    const urlPage = rawUrlPage && validPages.has(rawUrlPage) ? rawUrlPage : null
     const storedPage = window.localStorage.getItem('archonpro.activePage')
-    const nextPage = urlPage ?? storedPage
 
-    if (nextPage && validPages.has(nextPage)) {
-      prefetchPage(nextPage)
-      const id = requestAnimationFrame(() => startTransition(() => setActivePage(nextPage)))
-      return () => cancelAnimationFrame(id)
-    }
-
-    if (urlPage && !validPages.has(urlPage)) {
+    if (rawUrlPage && !validPages.has(rawUrlPage)) {
       const url = new URL(window.location.href)
       url.searchParams.delete('page')
       window.history.replaceState({}, '', url.toString())
@@ -196,6 +214,27 @@ export default function Dashboard() {
 
     if (storedPage && !validPages.has(storedPage)) {
       window.localStorage.removeItem('archonpro.activePage')
+    }
+
+    const nextPage = urlPage ?? storedPage
+    if (nextPage && validPages.has(nextPage) && nextPage !== activePage) {
+      const token = ++navTokenRef.current
+      // Avoid synchronous setState in an effect (eslint react-hooks/set-state-in-effect).
+      const rafId = requestAnimationFrame(() => setPageSwitching(true))
+
+      const loader = pageLoaders[nextPage]
+      void (async () => {
+        try {
+          await loader?.()
+        } catch {
+          // fall through and still set the page
+        }
+
+        if (navTokenRef.current !== token) return
+        startTransition(() => setActivePage(nextPage))
+        setPageSwitching(false)
+      })()
+      return () => cancelAnimationFrame(rafId)
     }
   }, [])
 
@@ -360,6 +399,7 @@ export default function Dashboard() {
           themeMounted={themeMounted}
           resolvedTheme={resolvedTheme}
           onToggleTheme={toggleTheme}
+          pageSwitching={pageSwitching}
         />
 
         {/* Content – min-height voorkomt springen bij paginawissel / lazy load */}

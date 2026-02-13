@@ -24,7 +24,8 @@
 				"@modelcontextprotocol/server-puppeteer"
 			],
 			"alwaysAllow": [
-				"puppeteer_screenshot"
+				"puppeteer_screenshot",
+				"puppeteer_click"
 			]
 		}
 	}

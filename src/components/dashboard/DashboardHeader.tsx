@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, Crown, Menu, Moon, Plus, Search, Sun, User } from 'lucide-react'
+import { Bell, Crown, Loader2, Menu, Moon, Plus, Search, Sun, User } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { toast } from '@/hooks/use-toast'
@@ -28,7 +28,11 @@ function LiveClock({ className }: { className?: string }) {
     }
   }, [])
 
-  return <span className={className}>{now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}</span>
+  return (
+    <span data-testid="live-clock" className={className}>
+      {now.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })}
+    </span>
+  )
 }
 
 export default function DashboardHeader({
@@ -39,6 +43,7 @@ export default function DashboardHeader({
   themeMounted,
   resolvedTheme,
   onToggleTheme,
+  pageSwitching,
 }: {
   sidebarOpen: boolean
   onOpenSidebar: () => void
@@ -47,6 +52,7 @@ export default function DashboardHeader({
   themeMounted: boolean
   resolvedTheme: string | undefined
   onToggleTheme: () => void
+  pageSwitching: boolean
 }) {
   return (
     <header className="sticky top-0 z-30 bg-background/30 backdrop-blur-xl border-b border-border/20">
@@ -88,11 +94,20 @@ export default function DashboardHeader({
           </div>
 
           <div className="flex items-center gap-2">
+            <div
+              aria-hidden="true"
+              data-testid="page-loading-indicator"
+              className={`hidden sm:flex items-center justify-center w-9 h-9 rounded-lg border border-border/30 bg-card/60 backdrop-blur-xl transition-opacity duration-200 ${pageSwitching ? 'opacity-100' : 'opacity-0'}`}
+            >
+              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            </div>
+
             {themeMounted ? (
               <LiveClock className="hidden sm:block text-sm font-medium text-foreground bg-card/60 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-border/30" />
             ) : (
               <span
                 className="hidden sm:block text-sm font-medium text-foreground bg-card/60 backdrop-blur-xl px-3 py-1.5 rounded-lg border border-border/30"
+                data-testid="live-clock"
                 aria-hidden="true"
               >
                 --:--
@@ -177,4 +192,3 @@ export default function DashboardHeader({
     </header>
   )
 }
-

@@ -1,126 +1,54 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 
-test.describe('All Action Buttons', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=bedrijven')
-  })
+test('sidebar buttons do not jump when switching pages', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Alleen relevant op desktop viewport')
 
-  // Previously fixed pages
-  test('Uitgaven page - Nieuwe Uitgave button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=uitgaven')
-    const button = page.getByRole('button', { name: /Nieuwe Uitgave/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    // Listen for toast
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuwe Uitgave')
-  })
+  await page.goto('/')
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
 
-  test('Agenda page - Nieuwe Afspraak button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=agenda')
-    const button = page.getByRole('button', { name: /Nieuwe Afspraak/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  const sidebar = page.locator('#desktop-sidebar')
+  await expect(sidebar).toBeVisible()
 
-  test('Offerte page - Nieuwe Offerte button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=offertes')
-    const button = page.getByRole('button', { name: /Nieuwe Offerte/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  const labels = ['Ga van start', 'Bedrijven', 'Contacten', 'Deals', 'Offertes', 'Projecten', 'Agenda'] as const
 
-  test('Projecten page - Nieuw Project button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=projecten')
-    const button = page.getByRole('button', { name: /Nieuw Project/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  const readBoxes = async () => {
+    const boxes: Record<(typeof labels)[number], { x: number; y: number; width: number; height: number }> = {} as never
+    for (const label of labels) {
+      const btn = sidebar.getByRole('button', { name: label, exact: true })
+      await expect(btn).toBeVisible()
+      const box = await btn.boundingBox()
+      expect(box, `Expected bounding box for "${label}"`).not.toBeNull()
+      boxes[label] = { x: box!.x, y: box!.y, width: box!.width, height: box!.height }
+    }
+    return boxes
+  }
 
-  test('Inkomsten page - Nieuwe Inkomst button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=inkomsten')
-    const button = page.getByRole('button', { name: /Nieuwe Inkomst/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  const assertStable = (
+    before: Record<(typeof labels)[number], { x: number; y: number; width: number; height: number }>,
+    after: Record<(typeof labels)[number], { x: number; y: number; width: number; height: number }>,
+    context: string
+  ) => {
+    for (const label of labels) {
+      const b = before[label]
+      const a = after[label]
 
-  // Newly fixed pages
-  test('Bedrijven page - Nieuw Bedrijf button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=bedrijven')
-    const button = page.getByRole('button', { name: /Nieuw Bedrijf/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuw Bedrijf')
-  })
+      expect(Math.abs(a.x - b.x), `${context}: "${label}" x shift`).toBeLessThanOrEqual(1)
+      expect(Math.abs(a.y - b.y), `${context}: "${label}" y shift`).toBeLessThanOrEqual(1)
+      expect(Math.abs(a.width - b.width), `${context}: "${label}" width shift`).toBeLessThanOrEqual(1)
+      expect(Math.abs(a.height - b.height), `${context}: "${label}" height shift`).toBeLessThanOrEqual(1)
+    }
+  }
 
-  test('Contacten page - Nieuw Contact button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=contacten')
-    const button = page.getByRole('button', { name: /Nieuw Contact/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuw Contact')
-  })
+  const before = await readBoxes()
 
-  test('Deals page - Nieuwe Deal button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=deals')
-    const button = page.getByRole('button', { name: /Nieuwe Deal/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuwe Deal')
-  })
+  await sidebar.getByRole('button', { name: 'Bedrijven', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Bedrijven' })).toBeVisible()
+  const afterBedrijven = await readBoxes()
+  assertStable(before, afterBedrijven, 'After navigating to Bedrijven')
 
-  test('Timesheets page - Nieuwe Entry button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=timesheets')
-    const button = page.getByRole('button', { name: /Nieuwe Entry/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuwe Entry')
-  })
-
-  test('Artikelen page - Nieuw Artikel button', async ({ page }) => {
-    await page.goto('http://localhost:3000/pages=artikelen')
-    const button = page.getByRole('button', { name: /Nieuw Artikel/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    
-    const toastPromise = page.waitForSelector('[role="status"]')
-    await button.click()
-    await toastPromise
-    
-    const toast = page.locator('[role="status"]')
-    await expect(toast).toContainText('Nieuw Artikel')
-  })
+  await sidebar.getByRole('button', { name: 'Deals', exact: true }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Deals' })).toBeVisible()
+  const afterDeals = await readBoxes()
+  assertStable(afterBedrijven, afterDeals, 'After navigating to Deals')
 })
+

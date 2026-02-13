@@ -1,85 +1,43 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 
 test.describe('All Action Buttons', () => {
-  // Verify all action buttons work across all pages
+  async function gotoPage(page: Page, pageId: string, heading: string) {
+    await page.goto(`/?page=${pageId}`)
+    await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+    await expect(page.getByRole('heading', { level: 1, name: new RegExp(`^${heading}$`, 'i') })).toBeVisible({
+      timeout: 10_000,
+    })
+  }
 
-  test('Bedrijven page - Nieuw Bedrijf button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=bedrijven')
-    const button = page.getByRole('button', { name: /Nieuw Bedrijf/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  const CASES: Array<{ pageId: string; heading: string; primaryAction: string }> = [
+    { pageId: 'bedrijven', heading: 'Bedrijven', primaryAction: 'Nieuw Bedrijf' },
+    { pageId: 'contacten', heading: 'Contacten', primaryAction: 'Nieuw Contact' },
+    { pageId: 'deals', heading: 'Deals', primaryAction: 'Nieuwe Deal' },
+    { pageId: 'timesheets', heading: 'Timesheets', primaryAction: 'Nieuwe Entry' },
+    { pageId: 'artikelen', heading: 'Artikelen', primaryAction: 'Nieuw Artikel' },
+    { pageId: 'offertes', heading: 'Offertes', primaryAction: 'Nieuwe Offerte' },
+    { pageId: 'projecten', heading: 'Projecten', primaryAction: 'Nieuw Project' },
+    { pageId: 'agenda', heading: 'Agenda', primaryAction: 'Nieuwe Afspraak' },
+    { pageId: 'inkomsten', heading: 'Inkomsten', primaryAction: 'Nieuwe Inkomst' },
+    { pageId: 'uitgaven', heading: 'Uitgaven', primaryAction: 'Nieuwe Uitgave' },
+  ]
 
-  test('Contacten page - Nieuw Contact button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=contacten')
-    const button = page.getByRole('button', { name: /Nieuw Contact/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+  for (const c of CASES) {
+    test(`${c.heading} - ${c.primaryAction} button triggers a toast`, async ({ page }) => {
+      await gotoPage(page, c.pageId, c.heading)
 
-  test('Deals page - Nieuwe Deal button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=deals')
-    const button = page.getByRole('button', { name: /Nieuwe Deal/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+      // Some pages contain multiple actions with the same label (e.g. "Nieuwe Deal").
+      // We just require at least one visible primary action to work.
+      const button = page.getByRole('button', { name: new RegExp(`^${c.primaryAction}$`, 'i') }).first()
+      await expect(button).toBeVisible()
+      await expect(button).toBeEnabled()
 
-  test('Timesheets page - Nieuwe Entry button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=timesheets')
-    const button = page.getByRole('button', { name: /Nieuwe Entry/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+      // Use keyboard activation to avoid sticky headers/overlays intercepting pointer clicks on mobile.
+      await button.focus()
+      await page.keyboard.press('Enter')
 
-  test('Artikelen page - Nieuw Artikel button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=artikelen')
-    const button = page.getByRole('button', { name: /Nieuw Artikel/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
-
-  test('Offertes page - Nieuwe Offerte button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=offertes')
-    const button = page.getByRole('button', { name: /Nieuwe Offerte/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
-
-  test('Projecten page - Nieuw Project button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=projecten')
-    const button = page.getByRole('button', { name: /Nieuw Project/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
-
-  test('Agenda page - Nieuwe Afspraak button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=agenda')
-    const button = page.getByRole('button', { name: /Nieuwe Afspraak/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
-
-  test('Inkomsten page - Nieuwe Inkomst button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=inkomsten')
-    const button = page.getByRole('button', { name: /Nieuwe Inkomst/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
-
-  test('Uitgaven page - Nieuwe Uitgave button', async ({ page }) => {
-    await page.goto('http://localhost:3000?page=uitgaven')
-    const button = page.getByRole('button', { name: /Nieuwe Uitgave/i })
-    await expect(button).toBeVisible()
-    await expect(button).toBeEnabled()
-    await button.click()
-  })
+      const toastRoot = page.locator('[toast-close]').locator('..').first()
+      await expect(toastRoot).toContainText(c.primaryAction)
+    })
+  }
 })

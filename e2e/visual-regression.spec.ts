@@ -1,12 +1,36 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 
 const SKIP_SNAPSHOTS_IN_CI = !!process.env.CI;
 
 test.describe('Visual Regression - Dashboard', () => {
+  async function stabilizeForSnapshots(page: Page) {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
+    await page.addStyleTag({
+      content: `
+        /* Disable animations/transitions for deterministic screenshots. */
+        *, *::before, *::after { 
+          animation: none !important;
+          transition: none !important;
+          scroll-behavior: auto !important;
+          caret-color: transparent !important;
+        }
+
+        /* Hide time-dependent UI without affecting layout. */
+        [data-testid="live-clock"],
+        [data-testid="page-loading-indicator"] {
+          visibility: hidden !important;
+        }
+      `,
+    })
+  }
+
   test('homepage snapshot – desktop', async ({ page }) => {
     test.skip(SKIP_SNAPSHOTS_IN_CI, 'Snapshots zijn environment-specifiek; draai lokaal met --update-snapshots.');
+    await page.setViewportSize({ width: 1440, height: 900 })
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+    await stabilizeForSnapshots(page)
     
     // Capture full page snapshot
     await expect(page).toHaveScreenshot('homepage-desktop.png', {
@@ -21,6 +45,8 @@ test.describe('Visual Regression - Dashboard', () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');
     await page.waitForLoadState('networkidle');
+    await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+    await stabilizeForSnapshots(page)
     
     // Capture mobile snapshot
     await expect(page).toHaveScreenshot('homepage-mobile.png', {

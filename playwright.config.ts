@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 
-// Use the dev server on port 3000
-const PORT = process.env.PLAYWRIGHT_PORT ? Number(process.env.PLAYWRIGHT_PORT) : 3000
+// Run E2E against a dedicated prod server port to avoid Next dev lock/port collisions.
+const PORT = process.env.PLAYWRIGHT_PORT ? Number(process.env.PLAYWRIGHT_PORT) : 3100
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`
 
 export default defineConfig({
@@ -21,9 +21,9 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   webServer: {
-    // Reuse the existing dev server when running tests locally
+    command: `npm run build && PORT=${PORT} npm run start`,
     url: baseURL,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
   projects: [

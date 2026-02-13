@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -58,6 +59,18 @@ const categorieKleuren: Record<string, string> = {
 export default function ArtikelenPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
+  const handleNieuwArtikel = () =>
+    toast({
+      title: 'Nieuw Artikel',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
+
+  const handleFilters = () =>
+    toast({
+      title: 'Filters',
+      description: 'Filterfunctionaliteit wordt geïmplementeerd.',
+    })
+
   const filteredArtikelen = artikelen.filter(artikel =>
     artikel.naam.toLowerCase().includes(searchQuery.toLowerCase()) ||
     artikel.categorie.toLowerCase().includes(searchQuery.toLowerCase())
@@ -71,7 +84,10 @@ export default function ArtikelenPage() {
           <h1 className="text-2xl font-bold text-foreground">Artikelen</h1>
           <p className="text-muted-foreground">Beheer uw producten en diensten</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200">
+        <Button
+          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
+          onClick={handleNieuwArtikel}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Artikel
         </Button>
@@ -93,8 +109,8 @@ export default function ArtikelenPage() {
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-              <Layers className="w-6 h-6 text-purple-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+              <Layers className="w-6 h-6 text-sky-600" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Categorieën</p>
@@ -115,7 +131,11 @@ export default function ArtikelenPage() {
             className="pl-10 bg-card/60 backdrop-blur-xl border-border/30 focus-visible:ring-2 focus-visible:ring-blue-500/20"
           />
         </div>
-        <Button variant="outline" className="bg-card/60 backdrop-blur-xl border-border/30 hover:bg-card/75">
+        <Button
+          variant="outline"
+          className="bg-card/60 backdrop-blur-xl border-border/30 hover:bg-card/75"
+          onClick={handleFilters}
+        >
           <Filter className="w-4 h-4 mr-2" />
           Filters
         </Button>
@@ -195,17 +215,42 @@ export default function ArtikelenPage() {
                         <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() =>
+                          toast({
+                            title: 'Artikel Bekijken',
+                            description: `${artikel.naam} wordt geopend.`,
+                          })
+                        }
+                      >
                         <Eye className="w-4 h-4 mr-2" />
                         Bekijk details
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() =>
+                          toast({
+                            title: 'Artikel Bewerken',
+                            description: `${artikel.naam} wordt bewerkt.`,
+                          })
+                        }
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Bewerken
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                        onClick={() =>
+                          toast({
+                            title: 'Artikel Verwijderen',
+                            description: `${artikel.naam} wordt verwijderd.`,
+                            variant: 'destructive',
+                          })
+                        }
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Verwijderen
                       </DropdownMenuItem>

@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -72,6 +73,12 @@ export default function InstellingenPage() {
   const [activeTab, setActiveTab] = useState("profiel")
   const [notifications, setNotifications] = useState(userSettings.notificaties)
 
+  const notifySave = (section: string) =>
+    toast({
+      title: 'Instellingen opgeslagen',
+      description: `${section} instellingen zijn opgeslagen (demo).`,
+    })
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -85,28 +92,28 @@ export default function InstellingenPage() {
         <TabsList className="bg-card/60 backdrop-blur-xl border border-border/30 p-1 rounded-xl">
           <TabsTrigger
             value="profiel"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <User className="w-4 h-4 mr-2" />
             Profiel
           </TabsTrigger>
           <TabsTrigger
             value="bedrijf"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Building2 className="w-4 h-4 mr-2" />
             Bedrijf
           </TabsTrigger>
           <TabsTrigger
             value="notificaties"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Bell className="w-4 h-4 mr-2" />
             Notificaties
           </TabsTrigger>
           <TabsTrigger
             value="integraties"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-purple-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Puzzle className="w-4 h-4 mr-2" />
             Integraties
@@ -123,13 +130,19 @@ export default function InstellingenPage() {
               <div className="relative">
                 <Avatar className="w-20 h-20">
                   <AvatarImage src="" />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-xl">
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-sky-600 text-white text-xl">
                     IN
                   </AvatarFallback>
                 </Avatar>
                 <Button
                   size="icon"
                   className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-card border border-border/30 shadow-md hover:bg-muted/40"
+                  onClick={() =>
+                    toast({
+                      title: 'Profielfoto',
+                      description: 'Uploaden wordt geïmplementeerd.',
+                    })
+                  }
                 >
                   <Camera className="w-4 h-4 text-muted-foreground" />
                 </Button>
@@ -230,7 +243,10 @@ export default function InstellingenPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200">
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                onClick={() => notifySave('Profiel')}
+              >
                 <Check className="w-4 h-4 mr-2" />
                 Wijzigingen opslaan
               </Button>
@@ -249,7 +265,17 @@ export default function InstellingenPage() {
                 <Building2 className="w-8 h-8 text-muted-foreground" />
               </div>
               <div>
-                <Button variant="outline" size="sm" className="bg-card/60 border-border/30">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-card/60 border-border/30"
+                  onClick={() =>
+                    toast({
+                      title: 'Bedrijfslogo',
+                      description: 'Uploaden wordt geïmplementeerd.',
+                    })
+                  }
+                >
                   <ImageIcon className="w-4 h-4 mr-2" />
                   Logo uploaden
                 </Button>
@@ -337,7 +363,10 @@ export default function InstellingenPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200">
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                onClick={() => notifySave('Bedrijf')}
+              >
                 <Check className="w-4 h-4 mr-2" />
                 Wijzigingen opslaan
               </Button>
@@ -431,7 +460,10 @@ export default function InstellingenPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-              <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200">
+              <Button
+                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                onClick={() => notifySave('Notificaties')}
+              >
                 <Check className="w-4 h-4 mr-2" />
                 Voorkeuren opslaan
               </Button>
@@ -472,6 +504,15 @@ export default function InstellingenPage() {
                         ? "border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/10"
                         : "border-border/30 text-muted-foreground hover:bg-muted/40"
                     )}
+                    onClick={() =>
+                      toast({
+                        title: integratie.status === 'Verbonden' ? 'Integratie' : 'Integratie Verbinden',
+                        description:
+                          integratie.status === 'Verbonden'
+                            ? `${integratie.naam} is al verbonden (demo).`
+                            : `${integratie.naam} verbinden wordt geïmplementeerd.`,
+                      })
+                    }
                   >
                     {integratie.status === "Verbonden" ? (
                       <>

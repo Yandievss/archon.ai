@@ -23,6 +23,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -140,6 +141,11 @@ function StatCard({
 
 export default function InkomstenPage() {
   const [timeFilter, setTimeFilter] = useState('maand')
+  const handleNewInkomst = () =>
+    toast({
+      title: 'Nieuwe Inkomst',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
 
   return (
     <div className="space-y-6">
@@ -154,7 +160,7 @@ export default function InkomstenPage() {
             <Download className="w-4 h-4 mr-2" />
             Exporteren
           </Button>
-          <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200">
+          <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200" onClick={handleNewInkomst}>
             <Plus className="w-4 h-4 mr-2" />
             Nieuwe Inkomst
           </Button>

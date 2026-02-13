@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Types
@@ -233,6 +234,13 @@ function ProjectCard({ project }: { project: Project; index?: number }) {
 }
 
 export default function ProjectenPage() {
+  const handleNewProject = () => {
+    toast({
+      title: 'Nieuw Project',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -241,7 +249,7 @@ export default function ProjectenPage() {
           <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
           <p className="text-sm text-muted-foreground">Beheer al uw projecten en deadlines</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200">
+        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewProject}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Project
         </Button>

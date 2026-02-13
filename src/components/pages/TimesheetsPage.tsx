@@ -32,6 +32,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -70,7 +71,27 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export default function TimesheetsPage() {
-  const [currentWeek, setCurrentWeek] = useState("10 - 16 Feb 2025")
+  const weeks = ["10 - 16 Feb 2025", "17 - 23 Feb 2025", "24 Feb - 2 Mrt 2025"] as const
+  const [weekIndex, setWeekIndex] = useState(0)
+  const currentWeek = weeks[weekIndex] ?? weeks[0]
+
+  const handleNewEntry = () =>
+    toast({
+      title: 'Nieuwe Entry',
+      description: 'Tijdregistratie toevoegen wordt geïmplementeerd.',
+    })
+
+  const handleWeekChange = (direction: 'prev' | 'next') => {
+    setWeekIndex((current) => {
+      if (direction === 'prev') return Math.max(0, current - 1)
+      return Math.min(weeks.length - 1, current + 1)
+    })
+
+    toast({
+      title: 'Week wisselen',
+      description: direction === 'prev' ? 'Vorige week geladen.' : 'Volgende week geladen.',
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -80,7 +101,10 @@ export default function TimesheetsPage() {
           <h1 className="text-2xl font-bold text-foreground">Timesheets</h1>
           <p className="text-muted-foreground">Beheer uw tijdregistratie</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200">
+        <Button
+          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
+          onClick={handleNewEntry}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Entry
         </Button>
@@ -88,14 +112,24 @@ export default function TimesheetsPage() {
 
       {/* Week Selector */}
       <div className="flex items-center justify-center gap-4">
-        <Button variant="outline" size="icon" className="bg-card/60 backdrop-blur-xl border-border/30">
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-card/60 backdrop-blur-xl border-border/30"
+          onClick={() => handleWeekChange('prev')}
+        >
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="flex items-center gap-2 px-4 py-2 bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl">
           <Calendar className="w-4 h-4 text-muted-foreground" />
           <span className="font-medium text-foreground">{currentWeek}</span>
         </div>
-        <Button variant="outline" size="icon" className="bg-card/60 backdrop-blur-xl border-border/30">
+        <Button
+          variant="outline"
+          size="icon"
+          className="bg-card/60 backdrop-blur-xl border-border/30"
+          onClick={() => handleWeekChange('next')}
+        >
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
@@ -116,8 +150,8 @@ export default function TimesheetsPage() {
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-              <Timer className="w-6 h-6 text-purple-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+              <Timer className="w-6 h-6 text-sky-600" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Vorige week</p>
@@ -165,7 +199,7 @@ export default function TimesheetsPage() {
                 {weeklyHours.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
-                    fill={index === weeklyHours.length - 1 ? '#8b5cf6' : '#3b82f6'}
+                    fill={index === weeklyHours.length - 1 ? '#0ea5e9' : '#3b82f6'}
                     fillOpacity={0.8}
                   />
                 ))}
@@ -229,12 +263,29 @@ export default function TimesheetsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem className="cursor-pointer">
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() =>
+                          toast({
+                            title: 'Entry Bewerken',
+                            description: `Entry op ${entry.datum} wordt bewerkt.`,
+                          })
+                        }
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Bewerken
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer text-red-600 focus:text-red-600">
+                      <DropdownMenuItem
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                        onClick={() =>
+                          toast({
+                            title: 'Entry Verwijderen',
+                            description: `Entry op ${entry.datum} wordt verwijderd.`,
+                            variant: 'destructive',
+                          })
+                        }
+                      >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Verwijderen
                       </DropdownMenuItem>

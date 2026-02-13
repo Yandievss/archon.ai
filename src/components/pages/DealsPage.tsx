@@ -52,7 +52,7 @@ const initialDeals: DealsByStatus = {
   contact: [
     { id: 4, naam: 'Cloud Migration', bedrijf: 'Global Solutions', waarde: 35000, prioriteit: 'hoog', kans: 40 },
     { id: 5, naam: 'Security Audit', bedrijf: 'Green Energy', waarde: 18000, prioriteit: 'laag', kans: 35 },
-    { id: 6, naam: '数据分析项目', bedrijf: 'Finance Hub', waarde: 42000, prioriteit: 'medium', kans: 45 },
+    { id: 6, naam: 'Data-analyse traject', bedrijf: 'Finance Hub', waarde: 42000, prioriteit: 'medium', kans: 45 },
     { id: 7, naam: 'Mobile App MVP', bedrijf: 'HealthTech NL', waarde: 55000, prioriteit: 'hoog', kans: 30 },
   ],
   offerte: [
@@ -74,7 +74,7 @@ const initialDeals: DealsByStatus = {
 const columns = [
   { key: 'nieuw' as const, label: 'NIEUW', color: 'bg-blue-500', gradient: 'from-blue-500/10 to-blue-600/5' },
   { key: 'contact' as const, label: 'CONTACT', color: 'bg-amber-500', gradient: 'from-amber-500/10 to-amber-600/5' },
-  { key: 'offerte' as const, label: 'OFFERTE', color: 'bg-purple-500', gradient: 'from-purple-500/10 to-purple-600/5' },
+  { key: 'offerte' as const, label: 'OFFERTE', color: 'bg-indigo-500', gradient: 'from-indigo-500/10 to-indigo-600/5' },
   { key: 'onderhandeling' as const, label: 'ONDERH.', color: 'bg-cyan-500', gradient: 'from-cyan-500/10 to-cyan-600/5' },
   { key: 'gewonnen' as const, label: 'GEWONNEN', color: 'bg-emerald-500', gradient: 'from-emerald-500/10 to-emerald-600/5' },
 ]
@@ -98,7 +98,7 @@ function PriorityBadge({ priority }: { priority: Deal['prioriteit'] }) {
 }
 
 // Deal Card Component – geen entrance-animatie zodat vakken niet bewegen bij paginawissel
-function DealCard({ deal }: { deal: Deal; index?: number }) {
+function DealCard({ deal }: { deal: Deal }) {
   return (
     <div
       className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-200 cursor-grab active:cursor-grabbing"
@@ -192,7 +192,7 @@ function DealCard({ deal }: { deal: Deal; index?: number }) {
 }
 
 export default function DealsPage() {
-  const [deals, setDeals] = useState(initialDeals)
+  const [deals] = useState(initialDeals)
 
   // Calculate totals
   const totalDeals = Object.values(deals).flat().length
@@ -206,8 +206,8 @@ export default function DealsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20">
-              <Briefcase className="w-6 h-6 text-purple-600" />
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-sky-500/10">
+              <Briefcase className="w-6 h-6 text-blue-600" />
             </div>
             Deals
           </h1>
@@ -223,7 +223,7 @@ export default function DealsPage() {
             </div>
           </div>
           <Button
-            className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg shadow-purple-500/25"
+            className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
             onClick={() => {
               toast({
                 title: 'Nieuwe Deal',
@@ -240,7 +240,7 @@ export default function DealsPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Totaal Deals', value: totalDeals, icon: Briefcase, color: 'from-blue-500 to-purple-500' },
+          { label: 'Totaal Deals', value: totalDeals, icon: Briefcase, color: 'from-blue-500 to-sky-500' },
           { label: 'Pipeline Waarde', value: `€${(totalValue / 1000).toFixed(0)}K`, icon: TrendingUp, color: 'from-emerald-500 to-teal-500' },
           { label: 'Gewonnen', value: wonDeals.length, icon: CheckCircle2, color: 'from-green-500 to-emerald-500' },
           { label: 'Gewonnen Waarde', value: `€${(wonValue / 1000).toFixed(0)}K`, icon: Calendar, color: 'from-amber-500 to-orange-500' },
@@ -301,8 +301,8 @@ export default function DealsPage() {
                     <p className="text-sm">Geen deals</p>
                   </div>
                 ) : (
-                  columnDeals.map((deal, index) => (
-                    <DealCard key={deal.id} deal={deal} index={index} />
+                  columnDeals.map((deal) => (
+                    <DealCard key={deal.id} deal={deal} />
                   ))
                 )}
 
@@ -330,7 +330,7 @@ export default function DealsPage() {
         <h3 className="font-semibold text-foreground mb-4">Snelle Acties</h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Nieuwe Deal', icon: Plus, color: 'from-purple-500 to-pink-500' },
+            { label: 'Nieuwe Deal', icon: Plus, color: 'from-blue-500 to-sky-600' },
             { label: 'Offerte Maken', icon: Briefcase, color: 'from-blue-500 to-cyan-500' },
             { label: 'Follow-up', icon: Clock, color: 'from-amber-500 to-orange-500' },
             { label: 'Rapportage', icon: TrendingUp, color: 'from-emerald-500 to-teal-500' },
@@ -339,6 +339,12 @@ export default function DealsPage() {
               key={action.label}
               variant="outline"
               className="h-auto py-4 flex flex-col items-center gap-2 border-border/30 hover:border-border/50 hover:bg-card/60"
+              onClick={() =>
+                toast({
+                  title: action.label,
+                  description: 'Actie wordt binnenkort gekoppeld.',
+                })
+              }
             >
               <div className={cn('p-2 rounded-lg bg-gradient-to-br text-white', action.color)}>
                 <action.icon className="w-4 h-4" />

@@ -5,6 +5,7 @@ import { MessageCircle, Users, Hash, TrendingUp, Clock, Pin, Plus } from 'lucide
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 interface Thread {
   id: string
@@ -183,7 +184,13 @@ function StaticThreads() {
                   <button
                     key={thread.id}
                     type="button"
-                    onClick={() => setSelectedThread(thread.id)}
+                    onClick={() => {
+                      setSelectedThread(thread.id)
+                      toast({
+                        title: 'Discussie Geopend',
+                        description: `Discussie "${thread.title}" wordt geopend.`,
+                      })
+                    }}
                     className={cn(
                       "w-full text-left p-3 rounded-xl border transition-all duration-200",
                       selectedThread === thread.id
@@ -241,6 +248,12 @@ function StaticThreads() {
                 <button
                   key={stream.id}
                   type="button"
+                  onClick={() => {
+                    toast({
+                      title: 'Kanaal Geopend',
+                      description: `Kanaal "${stream.name}" wordt geopend.`,
+                    })
+                  }}
                   className="w-full text-left p-3 rounded-xl border border-border/30 bg-card/40 hover:border-border/50 hover:bg-background/40 transition-all duration-200"
                 >
                   <div className="flex items-center justify-between mb-2">
@@ -271,10 +284,16 @@ function StaticThreads() {
         
         {/* Action Button */}
         <div className="mt-4 pt-3 border-t border-border/30">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="w-full bg-card/40 border-border/30 hover:bg-card/60 text-foreground"
+            onClick={() => {
+              toast({
+                title: activeTab === 'threads' ? 'Nieuwe Discussie' : 'Nieuw Kanaal',
+                description: `${activeTab === 'threads' ? 'Discussie' : 'Kanaal'} aanmaken functionaliteit wordt geïmplementeerd.`,
+              })
+            }}
           >
             <Plus className="w-4 h-4 mr-2" />
             {activeTab === 'threads' ? 'Nieuwe discussie' : 'Nieuw kanaal'}

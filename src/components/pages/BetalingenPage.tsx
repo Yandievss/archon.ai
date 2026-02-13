@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -138,7 +139,6 @@ function PaymentCard({
 }: { 
   item: typeof teOntvangenBetalingen[0] | typeof teBetalenBetalingen[0]
   type: 'in' | 'out'
-  index: number
 }) {
   const isTeOntvangen = type === 'in'
   const bedrijf = isTeOntvangen ? (item as typeof teOntvangenBetalingen[0]).bedrijf : (item as typeof teBetalenBetalingen[0]).leverancier
@@ -187,6 +187,12 @@ function PaymentCard({
             variant="outline" 
             size="sm" 
             className="h-8 text-xs bg-card/60 hover:bg-card/75 border-border/30"
+            onClick={() =>
+              toast({
+                title: 'Betaling Details',
+                description: `Details voor factuur ${item.factuurNr} worden geopend.`,
+              })
+            }
           >
             <Eye className="w-3.5 h-3.5 mr-1" />
             Details
@@ -199,6 +205,12 @@ function PaymentCard({
                 ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/25"
                 : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/25"
             )}
+            onClick={() =>
+              toast({
+                title: isTeOntvangen ? 'Markeer Betaald' : 'Betaal Nu',
+                description: `Actie voor factuur ${item.factuurNr} wordt verwerkt.`,
+              })
+            }
           >
             <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
             {isTeOntvangen ? 'Markeer betaald' : 'Betaal nu'}
@@ -247,7 +259,16 @@ export default function BetalingenPage() {
             <option value="dit-jaar">Dit jaar</option>
           </select>
 
-          <Button variant="outline" className="bg-card/60 backdrop-blur-xl border-border/30 hover:bg-card/75">
+          <Button
+            variant="outline"
+            className="bg-card/60 backdrop-blur-xl border-border/30 hover:bg-card/75"
+            onClick={() =>
+              toast({
+                title: 'Exporteren',
+                description: 'Export wordt voorbereid.',
+              })
+            }
+          >
             <Download className="w-4 h-4 mr-2" />
             Exporteren
           </Button>
@@ -316,7 +337,7 @@ export default function BetalingenPage() {
           <TabsContent value="te-ontvangen" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {teOntvangenBetalingen.map((item, index) => (
-                <PaymentCard key={item.id} item={item} type="in" index={index} />
+                <PaymentCard key={item.id} item={item} type="in" />
               ))}
             </div>
           </TabsContent>
@@ -324,7 +345,7 @@ export default function BetalingenPage() {
           <TabsContent value="te-betalen" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {teBetalenBetalingen.map((item, index) => (
-                <PaymentCard key={item.id} item={item} type="out" index={index} />
+                <PaymentCard key={item.id} item={item} type="out" />
               ))}
             </div>
           </TabsContent>
@@ -347,7 +368,15 @@ export default function BetalingenPage() {
               </p>
               <p className="text-xs text-white/70">Netto positief</p>
             </div>
-            <Button className="bg-inverse text-inverse-foreground hover:bg-inverse/90 shadow-lg transition-all duration-200">
+            <Button
+              className="bg-inverse text-inverse-foreground hover:bg-inverse/90 shadow-lg transition-all duration-200"
+              onClick={() =>
+                toast({
+                  title: 'Betaaloverzicht',
+                  description: 'Betaaloverzicht wordt geopend.',
+                })
+              }
+            >
               <CreditCard className="w-4 h-4 mr-2" />
               Betaaloverzicht
             </Button>

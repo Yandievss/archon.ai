@@ -41,17 +41,16 @@ async function navigateViaSidebar(page: Page, label: string) {
 }
 
 async function navigateViaMobileMenu(page: Page, label: string) {
-  // On mobile viewport, the navigation items are visible in the sidebar
-  // Find the nav button specifically in the sidebar/navigation area
-  const navArea = page.locator('#desktop-sidebar, [role="navigation"], nav')
-  const navBtn = navArea.getByRole('button', { name: label, exact: true }).first()
-  
-  if (await navBtn.isVisible()) {
-    await navBtn.click()
-    await page.waitForLoadState('networkidle')
-  } else {
-    throw new Error(`Navigation button "${label}" not found on mobile`)
-  }
+  await page.getByRole('button', { name: 'Menu openen' }).click()
+  const sheet = page.locator('#mobile-sidebar')
+  await expect(sheet).toBeVisible()
+
+  const navBtn = sheet.getByRole('button', { name: label, exact: true })
+  await expect(navBtn).toBeVisible()
+  await navBtn.scrollIntoViewIfNeeded()
+  await navBtn.click()
+
+  await expect(sheet).toBeHidden()
 }
 
 async function navigate(page: Page, viewport: string, target: PageInfo) {
@@ -64,15 +63,14 @@ async function navigate(page: Page, viewport: string, target: PageInfo) {
   // Wait for page content to load (via text content, not URL)
   await page.waitForLoadState('networkidle')
   
-  // Verify page changed via content
   if (target.id === 'home') {
-    // Home page should have "Welkom terug!" heading
     await expect(page.getByRole('heading', { name: /Welkom terug/i })).toBeVisible({ timeout: 3000 })
-  } else {
-    // Check for page title in document
-    const mainContent = page.locator('main, div[class*="content"]')
-    await expect(mainContent).toContainText(target.label, { timeout: 4000 })
+    return
   }
+
+  await expect(page.getByRole('heading', { level: 1, name: new RegExp(`^${target.label}$`, 'i') })).toBeVisible({
+    timeout: 5000,
+  })
 }
 
 test.describe('Button Functionality - Dashboard', () => {
@@ -80,7 +78,7 @@ test.describe('Button Functionality - Dashboard', () => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: /Welkom terug/i })).toBeVisible()
     // Wait for app to fully load and hydrate
-    await page.waitForLoadState('networkidle')
+    await expect(page.locator('[data-mounted=\"true\"]')).toHaveCount(1)
   })
 
   test('header buttons exist and are enabled on key pages (desktop)', async ({ page }, testInfo) => {

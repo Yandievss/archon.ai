@@ -29,6 +29,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -178,6 +179,13 @@ function StatCard({
 }
 
 export default function UitgavenPage() {
+  const handleNewUitgave = () => {
+    toast({
+      title: 'Nieuwe Uitgave',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -191,7 +199,7 @@ export default function UitgavenPage() {
             <Download className="w-4 h-4 mr-2" />
             Exporteren
           </Button>
-          <Button className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 transition-all duration-200">
+          <Button className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg shadow-red-500/25 transition-all duration-200" onClick={handleNewUitgave}>
             <Plus className="w-4 h-4 mr-2" />
             Nieuwe Uitgave
           </Button>

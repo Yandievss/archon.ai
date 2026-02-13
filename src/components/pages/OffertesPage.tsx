@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/hooks/use-toast'
 import {
   Table,
   TableBody,
@@ -43,13 +44,6 @@ interface Offerte {
 }
 
 // Sample Data
-const offertesStats = {
-  totaal: 15,
-  openstaand: 6,
-  geaccepteerd: 7,
-  afgewezen: 2
-}
-
 const offertes: Offerte[] = [
   { id: 1, nummer: "2025-001", klant: "ACME BV", bedrag: 8500, datum: "10 Feb 2025", geldigTot: "24 Feb 2025", status: "Openstaand" },
   { id: 2, nummer: "2025-002", klant: "Global Solutions", bedrag: 12000, datum: "8 Feb 2025", geldigTot: "22 Feb 2025", status: "Geaccepteerd" },
@@ -192,19 +186,52 @@ function OfferteRow({ offerte }: { offerte: Offerte; index?: number }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem className="gap-2">
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => {
+                toast({
+                  title: 'Offerte Bekijken',
+                  description: `Offerte ${offerte.nummer} voor ${offerte.klant} wordt geopend.`,
+                })
+              }}
+            >
               <Eye className="w-4 h-4" />
               Bekijken
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2">
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => {
+                toast({
+                  title: 'Offerte Downloaden',
+                  description: `Download wordt voorbereid voor offerte ${offerte.nummer}.`,
+                })
+              }}
+            >
               <Download className="w-4 h-4" />
               Downloaden
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2">
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() => {
+                toast({
+                  title: 'Offerte Verzenden',
+                  description: `Offerte ${offerte.nummer} wordt klaargezet om te verzenden.`,
+                })
+              }}
+            >
               <Send className="w-4 h-4" />
               Verzenden
             </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2 text-red-600 focus:text-red-600">
+            <DropdownMenuItem
+              className="gap-2 text-red-600 focus:text-red-600"
+              onClick={() => {
+                toast({
+                  title: 'Offerte Verwijderen',
+                  description: `Offerte ${offerte.nummer} wordt verwijderd.`,
+                  variant: 'destructive',
+                })
+              }}
+            >
               <Trash2 className="w-4 h-4" />
               Verwijderen
             </DropdownMenuItem>
@@ -216,6 +243,21 @@ function OfferteRow({ offerte }: { offerte: Offerte; index?: number }) {
 }
 
 export default function OffertesPage() {
+  const handleNewOfferte = () => {
+    toast({
+      title: 'Nieuwe Offerte',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
+  }
+
+  const totalOffertes = offertes.length
+  const openstaandCount = offertes.filter((o) => o.status === 'Openstaand').length
+  const geaccepteerdCount = offertes.filter((o) => o.status === 'Geaccepteerd').length
+  const afgewezenCount = offertes.filter((o) => o.status === 'Afgewezen').length
+  const totalBedrag = offertes.reduce((sum, o) => sum + o.bedrag, 0)
+  const gemiddeldeWaarde = totalOffertes > 0 ? totalBedrag / totalOffertes : 0
+  const conversie = totalOffertes > 0 ? (geaccepteerdCount / totalOffertes) * 100 : 0
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -224,7 +266,7 @@ export default function OffertesPage() {
           <h1 className="text-2xl font-bold text-foreground">Offertes</h1>
           <p className="text-sm text-muted-foreground">Beheer uw offertes en prijsvoorstellen</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200">
+        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewOfferte}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Offerte
         </Button>
@@ -232,10 +274,10 @@ export default function OffertesPage() {
 
       {/* Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Totaal" value={offertesStats.totaal} icon={FileText} gradient="from-slate-500 to-slate-600" />
-        <StatCard label="Openstaand" value={offertesStats.openstaand} icon={Clock} gradient="from-amber-500 to-amber-600" />
-        <StatCard label="Geaccepteerd" value={offertesStats.geaccepteerd} icon={CheckCircle} gradient="from-emerald-500 to-emerald-600" />
-        <StatCard label="Afgewezen" value={offertesStats.afgewezen} icon={XCircle} gradient="from-red-500 to-red-600" />
+        <StatCard label="Totaal" value={totalOffertes} icon={FileText} gradient="from-slate-500 to-slate-600" />
+        <StatCard label="Openstaand" value={openstaandCount} icon={Clock} gradient="from-amber-500 to-amber-600" />
+        <StatCard label="Geaccepteerd" value={geaccepteerdCount} icon={CheckCircle} gradient="from-emerald-500 to-emerald-600" />
+        <StatCard label="Afgewezen" value={afgewezenCount} icon={XCircle} gradient="from-red-500 to-red-600" />
         <div className="col-span-2 lg:col-span-1">
           <TotalAmountCard />
         </div>
@@ -270,11 +312,11 @@ export default function OffertesPage() {
               <Clock className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Te vervallen</p>
-              <p className="text-xl font-bold text-foreground">3 offertes</p>
+              <p className="text-sm text-muted-foreground">Openstaand</p>
+              <p className="text-xl font-bold text-foreground">{openstaandCount} offertes</p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Binnen 7 dagen verlopen</p>
+          <p className="text-xs text-muted-foreground mt-2">Nog niet geaccepteerd</p>
         </div>
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow,border-color] duration-300">
@@ -284,10 +326,10 @@ export default function OffertesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Conversie ratio</p>
-              <p className="text-xl font-bold text-foreground">46.7%</p>
+              <p className="text-xl font-bold text-foreground">{conversie.toFixed(1)}%</p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-2">7 van 15 geaccepteerd</p>
+          <p className="text-xs text-muted-foreground mt-2">{geaccepteerdCount} van {totalOffertes} geaccepteerd</p>
         </div>
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow,border-color] duration-300">
@@ -297,7 +339,7 @@ export default function OffertesPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Gemiddelde waarde</p>
-              <p className="text-xl font-bold text-foreground">€15,643</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(gemiddeldeWaarde)}</p>
             </div>
           </div>
           <p className="text-xs text-muted-foreground mt-2">Per offerte</p>

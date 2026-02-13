@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Types
@@ -189,6 +190,13 @@ function CustomCalendar() {
 }
 
 export default function AgendaPage() {
+  const handleNewAfspraak = () => {
+    toast({
+      title: 'Nieuwe Afspraak',
+      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
+    })
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -197,7 +205,7 @@ export default function AgendaPage() {
           <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
           <p className="text-sm text-muted-foreground">Beheer uw afspraken en planning</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200">
+        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200" onClick={handleNewAfspraak}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Afspraak
         </Button>

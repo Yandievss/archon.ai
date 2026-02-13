@@ -231,4 +231,7 @@ DROP POLICY IF EXISTS "Enable all operations for public" ON abonnementen;
 CREATE POLICY "Allow authenticated select on abonnementen" ON abonnementen
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Allow authenticated users to INSERT (use WITH CHECK for INSERT)
+-- (Optional) sample data can be added here if desired
+
 -- (Optional) sample data can be added here if desired

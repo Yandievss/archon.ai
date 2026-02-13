@@ -61,7 +61,31 @@ export default function AddCompanyModal({
   async function onSubmit(values: CompanyFormValues) {
     setIsSubmitting(true)
     try {
-      // TODO: Send to Supabase API
+      const payload = {
+        name: values.name,
+        sector: values.sector || undefined,
+        location: values.location || undefined,
+        email: values.email || undefined,
+        phone: values.phone || undefined,
+        website: values.website || undefined,
+        description: values.description || undefined,
+        status: 'Actief',
+      }
+
+      const response = await fetch('/api/companies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        const details = body?.details?.[0]?.message
+        throw new Error(details || body?.error || 'Kon bedrijf niet opslaan.')
+      }
+
       toast({
         title: 'Succes!',
         description: `Bedrijf ${values.name} is aangemaakt.`,
@@ -69,10 +93,10 @@ export default function AddCompanyModal({
       form.reset()
       onOpenChange(false)
       onSuccess?.()
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Fout',
-        description: 'Kon bedrijf niet aanmaken.',
+        description: error?.message ?? 'Kon bedrijf niet aanmaken.',
         variant: 'destructive',
       })
     } finally {

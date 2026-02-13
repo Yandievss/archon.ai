@@ -171,25 +171,45 @@ DROP POLICY IF EXISTS "Enable all operations for public" ON bedrijven;
 CREATE POLICY "Allow authenticated select on bedrijven" ON bedrijven
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Allow authenticated users to insert into bedrijven
+CREATE POLICY "Allow authenticated insert on bedrijven" ON bedrijven
+  FOR INSERT USING (auth.role() = 'authenticated');
+
 -- Contacten
 DROP POLICY IF EXISTS "Enable all operations for public" ON contacten;
 CREATE POLICY "Allow authenticated select on contacten" ON contacten
   FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow authenticated users to insert into contacten
+CREATE POLICY "Allow authenticated insert on contacten" ON contacten
+  FOR INSERT USING (auth.role() = 'authenticated');
 
 -- Deals
 DROP POLICY IF EXISTS "Enable all operations for public" ON deals;
 CREATE POLICY "Allow authenticated select on deals" ON deals
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Allow authenticated users to insert into deals
+CREATE POLICY "Allow authenticated insert on deals" ON deals
+  FOR INSERT USING (auth.role() = 'authenticated');
+
 -- Projecten
 DROP POLICY IF EXISTS "Enable all operations for public" ON projecten;
 CREATE POLICY "Allow authenticated select on projecten" ON projecten
   FOR SELECT USING (auth.role() = 'authenticated');
 
+-- Allow authenticated users to insert into projecten
+CREATE POLICY "Allow authenticated insert on projecten" ON projecten
+  FOR INSERT USING (auth.role() = 'authenticated');
+
 -- Offertes
 DROP POLICY IF EXISTS "Enable all operations for public" ON offertes;
 CREATE POLICY "Allow authenticated select on offertes" ON offertes
   FOR SELECT USING (auth.role() = 'authenticated');
+
+-- Allow authenticated users to insert into offertes
+CREATE POLICY "Allow authenticated insert on offertes" ON offertes
+  FOR INSERT USING (auth.role() = 'authenticated');
 
 -- Insert sample data (optional - remove in production)
 DO $$

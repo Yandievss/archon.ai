@@ -62,6 +62,26 @@ jobs:
           path: output/playwright/report
           retention-days: 30
 
+      - name: Stop previous server
+        run: pkill -f "node.*server" || true
+        continue-on-error: true
+
+      - name: Start production server for Lighthouse
+        run: |
+          NODE_ENV=production node .next/standalone/server.js > server.log 2>&1 &
+          npx wait-on http://localhost:3000 --timeout 60000
+
+      - name: Run Lighthouse CI
+        run: npx -p @lhci/cli@* lhci autorun || true
+
+      - name: Upload Lighthouse results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lighthouse-ci-results
+          retention-days: 30
+
       - name: Stop server
         if: always()
-        run: pkill -f "next" || true
+        run: pkill -f "node.*server" || true

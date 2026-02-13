@@ -194,6 +194,12 @@ function DealCard({ deal }: { deal: Deal }) {
 export default function DealsPage() {
   const [deals] = useState(initialDeals)
 
+  const handleNewDeal = () =>
+    toast({
+      title: 'Nieuwe Deal',
+      description: 'Deal aanmaken functionaliteit wordt geïmplementeerd.',
+    })
+
   // Calculate totals
   const totalDeals = Object.values(deals).flat().length
   const totalValue = Object.values(deals).flat().reduce((sum, deal) => sum + deal.waarde, 0)
@@ -224,12 +230,7 @@ export default function DealsPage() {
           </div>
           <Button
             className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
-            onClick={() => {
-              toast({
-                title: 'Nieuwe Deal',
-                description: 'Deal aanmaken functionaliteit wordt geïmplementeerd.',
-              })
-            }}
+            onClick={handleNewDeal}
           >
             <Plus className="w-4 h-4 mr-2" />
             Nieuwe Deal

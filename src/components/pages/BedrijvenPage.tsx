@@ -83,6 +83,12 @@ export default function BedrijvenPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 5
 
+  const handleNewBedrijf = () =>
+    toast({
+      title: 'Nieuw Bedrijf',
+      description: 'Bedrijf aanmaken functionaliteit wordt geïmplementeerd.',
+    })
+
   // Filter and sort data
   const filteredData = bedrijvenData
     .filter((bedrijf) => {
@@ -116,7 +122,7 @@ export default function BedrijvenPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-purple-500/20">
+            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-sky-500/10">
               <Building2 className="w-6 h-6 text-blue-600" />
             </div>
             Bedrijven
@@ -124,13 +130,8 @@ export default function BedrijvenPage() {
           <p className="text-muted-foreground mt-1">Beheer uw bedrijfsrelaties</p>
         </div>
         <Button
-          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25"
-          onClick={() => {
-            toast({
-              title: 'Nieuw Bedrijf',
-              description: 'Bedrijf aanmaken functionaliteit wordt geïmplementeerd.',
-            })
-          }}
+          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
+          onClick={handleNewBedrijf}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Bedrijf
@@ -222,7 +223,7 @@ export default function BedrijvenPage() {
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10 border-2 border-border/30 shadow-sm">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 text-blue-600 font-semibold">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500/10 to-sky-500/10 text-blue-600 font-semibold">
                         {bedrijf.naam.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>

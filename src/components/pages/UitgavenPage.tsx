@@ -233,8 +233,8 @@ export default function UitgavenPage() {
           title="Grootste categorie"
           value={uitgavenStats.grootsteCategorie}
           icon={PieChartIcon}
-          color="#8b5cf6"
-          gradient="from-purple-500/20 to-purple-600/10"
+          color="#0ea5e9"
+          gradient="from-sky-500/20 to-sky-600/10"
           isText
         />
       </div>

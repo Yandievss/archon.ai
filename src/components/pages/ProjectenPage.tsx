@@ -103,7 +103,7 @@ function AnimatedProgress({ value, className }: { value: number; className?: str
   return (
     <div className={cn("relative h-2 w-full overflow-hidden rounded-full bg-muted", className)}>
       <div
-        className="h-full bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"
+        className="h-full bg-gradient-to-r from-blue-500 to-sky-600 rounded-full"
         style={{ width: `${value}%` }}
       />
     </div>
@@ -114,7 +114,7 @@ function AnimatedProgress({ value, className }: { value: number; className?: str
 function TeamAvatars({ members }: { members: string[] }) {
   const colors = [
     "bg-gradient-to-br from-blue-400 to-blue-600",
-    "bg-gradient-to-br from-purple-400 to-purple-600",
+    "bg-gradient-to-br from-sky-400 to-sky-600",
     "bg-gradient-to-br from-pink-400 to-pink-600",
     "bg-gradient-to-br from-amber-400 to-amber-600",
     "bg-gradient-to-br from-emerald-400 to-emerald-600",
@@ -162,12 +162,12 @@ function StatCard({ label, value, icon: Icon, gradient }: { label: string; value
 }
 
 // Project Card Component
-function ProjectCard({ project }: { project: Project; index?: number }) {
+function ProjectCard({ project }: { project: Project }) {
   const budgetPercentage = Math.round((project.budgetGebruikt / project.budget) * 100)
 
   return (
     <div className="group relative">
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-blue-500/10 to-sky-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="relative bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
@@ -178,7 +178,17 @@ function ProjectCard({ project }: { project: Project; index?: number }) {
             </div>
             <p className="text-sm text-muted-foreground">{project.klant}</p>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted/60">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-muted/60"
+            onClick={() =>
+              toast({
+                title: 'Project Opties',
+                description: `Opties voor ${project.naam} worden geopend.`,
+              })
+            }
+          >
             <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
           </Button>
         </div>
@@ -249,7 +259,7 @@ export default function ProjectenPage() {
           <h1 className="text-2xl font-bold text-foreground">Projecten</h1>
           <p className="text-sm text-muted-foreground">Beheer al uw projecten en deadlines</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewProject}>
+        <Button className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewProject}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Project
         </Button>
@@ -260,13 +270,13 @@ export default function ProjectenPage() {
         <StatCard label="Actief" value={projectenStats.actief} icon={FolderKanban} gradient="from-blue-500 to-blue-600" />
         <StatCard label="Afgerond" value={projectenStats.afgerond} icon={FolderKanban} gradient="from-emerald-500 to-emerald-600" />
         <StatCard label="On Hold" value={projectenStats.onHold} icon={FolderKanban} gradient="from-amber-500 to-amber-600" />
-        <StatCard label="Totaal" value={projectenStats.totaal} icon={FolderKanban} gradient="from-purple-500 to-purple-600" />
+        <StatCard label="Totaal" value={projectenStats.totaal} icon={FolderKanban} gradient="from-sky-500 to-sky-600" />
       </div>
 
       {/* Projects Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {projecten.map((project, index) => (
-          <ProjectCard key={project.id} project={project} index={index} />
+        {projecten.map((project) => (
+          <ProjectCard key={project.id} project={project} />
         ))}
       </div>
     </div>

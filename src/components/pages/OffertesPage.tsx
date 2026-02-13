@@ -157,7 +157,7 @@ function OfferteRow({ offerte }: { offerte: Offerte; index?: number }) {
     <tr className="group hover:bg-muted/40 transition-colors">
       <TableCell className="font-medium">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-purple-500/10 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-sky-500/10 flex items-center justify-center">
             <FileText className="w-4 h-4 text-blue-600" />
           </div>
           <span className="text-foreground">{offerte.nummer}</span>
@@ -266,7 +266,7 @@ export default function OffertesPage() {
           <h1 className="text-2xl font-bold text-foreground">Offertes</h1>
           <p className="text-sm text-muted-foreground">Beheer uw offertes en prijsvoorstellen</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewOfferte}>
+        <Button className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewOfferte}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Offerte
         </Button>

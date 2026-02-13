@@ -1,3 +1,4 @@
 {
-    "workbench.experimental.cloudChanges.partialMatches.enabled": true
+    "workbench.experimental.cloudChanges.partialMatches.enabled": true,
+    "typescript.disableAutomaticTypeAcquisition": true
 }

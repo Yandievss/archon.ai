@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface Message {
@@ -54,6 +55,15 @@ export default function AIAssistantPage() {
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const handleCopy = async (content: string) => {
+    try {
+      await navigator.clipboard.writeText(content)
+      toast({ title: 'Gekopieerd', description: 'Tekst is gekopieerd naar klembord.' })
+    } catch {
+      toast({ title: 'Kopiëren mislukt', description: 'Clipboard toegang is niet beschikbaar.', variant: 'destructive' })
+    }
+  }
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -121,7 +131,7 @@ export default function AIAssistantPage() {
         </div>
         <Badge className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-purple-600 border-purple-500/20 px-3 py-1">
           <Sparkles className="w-3 h-3 mr-1" />
-          GPT-4 Turbo
+          Archon AI
         </Badge>
       </div>
 
@@ -165,15 +175,40 @@ export default function AIAssistantPage() {
                   
                   {message.role === 'assistant' && (
                     <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() => handleCopy(message.content)}
+                      >
                         <Copy className="w-3 h-3 mr-1" />
                         Kopieer
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          toast({
+                            title: 'Feedback ontvangen',
+                            description: 'Bedankt! We gebruiken dit om te verbeteren.',
+                          })
+                        }
+                      >
                         <ThumbsUp className="w-3 h-3 mr-1" />
                         Nuttig
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground hover:text-foreground">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+                        onClick={() =>
+                          toast({
+                            title: 'Opnieuw genereren',
+                            description: 'Deze actie wordt binnenkort gekoppeld.',
+                          })
+                        }
+                      >
                         <RefreshCw className="w-3 h-3 mr-1" />
                         Opnieuw
                       </Button>

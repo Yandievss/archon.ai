@@ -55,7 +55,7 @@ const calendarEvents: Record<number, CalendarEvent[]> = {
 // Type Icon Component
 function TypeIcon({ type }: { type: Afspraak['type'] }) {
   const icons = {
-    Intern: { icon: Users, color: "text-purple-500 bg-purple-500/10" },
+    Intern: { icon: Users, color: "text-slate-600 bg-slate-500/10" },
     Klant: { icon: Users, color: "text-blue-500 bg-blue-500/10" },
     Demo: { icon: Presentation, color: "text-emerald-500 bg-emerald-500/10" },
     Prospect: { icon: Phone, color: "text-amber-500 bg-amber-500/10" },
@@ -71,7 +71,7 @@ function TypeIcon({ type }: { type: Afspraak['type'] }) {
 // Type Badge Component
 function TypeBadge({ type }: { type: Afspraak['type'] }) {
   const styles = {
-    Intern: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+    Intern: "bg-slate-500/10 text-slate-600 border-slate-500/20",
     Klant: "bg-blue-500/10 text-blue-600 border-blue-500/20",
     Demo: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
     Prospect: "bg-amber-500/10 text-amber-600 border-amber-500/20",
@@ -141,7 +141,7 @@ function CustomCalendar() {
         className={cn(
           "w-8 h-8 rounded-lg text-sm font-medium flex flex-col items-center justify-center relative transition-[background-color,box-shadow,border-color] duration-200",
           isToday
-            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25"
+            ? "bg-gradient-to-br from-blue-500 to-sky-600 text-white shadow-lg shadow-blue-500/25"
             : hasEvent
             ? "bg-muted text-foreground/80 hover:bg-muted/80"
             : "text-muted-foreground hover:bg-muted/40"
@@ -205,7 +205,7 @@ export default function AgendaPage() {
           <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
           <p className="text-sm text-muted-foreground">Beheer uw afspraken en planning</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200" onClick={handleNewAfspraak}>
+        <Button className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200" onClick={handleNewAfspraak}>
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Afspraak
         </Button>
@@ -235,7 +235,7 @@ export default function AgendaPage() {
             </div>
             <div className="flex items-center gap-2 mt-4">
               <div className="flex-1 h-2 bg-inverse/10 rounded-full overflow-hidden">
-                <div className="h-full w-3/4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full" />
+                <div className="h-full w-3/4 bg-gradient-to-r from-blue-500 to-sky-500 rounded-full" />
               </div>
               <span className="text-xs text-white/70">76% bezet</span>
             </div>

@@ -15,6 +15,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 // Sample Data
@@ -42,7 +43,7 @@ const plans = [
     description: "Populair voor groeiende bedrijven",
     features: ["Onbeperkte bedrijven", "Onbeperkte contacten", "AI Assistant", "Rapportages", "API toegang", "Priority support"],
     current: true,
-    color: "from-blue-500 to-purple-600"
+    color: "from-blue-500 to-sky-600"
   },
   {
     naam: "Enterprise",
@@ -55,6 +56,24 @@ const plans = [
 ]
 
 export default function AbonnementPage() {
+  const handleViewInvoices = () =>
+    toast({
+      title: 'Facturen',
+      description: 'Facturenoverzicht wordt geïmplementeerd.',
+    })
+
+  const handleUpgrade = (planName: string) =>
+    toast({
+      title: 'Upgrade',
+      description: `Upgrade naar ${planName} wordt voorbereid (demo).`,
+    })
+
+  const handleTeamManage = () =>
+    toast({
+      title: 'Team beheren',
+      description: 'Teambeheer wordt geïmplementeerd.',
+    })
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -66,12 +85,12 @@ export default function AbonnementPage() {
       {/* Current Plan Card */}
       <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-sky-500/20 to-emerald-500/15 animate-pulse" />
         <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-[size:250px_250px]" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg shadow-purple-500/25">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-sky-600 shadow-lg shadow-blue-500/25">
               <Crown className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -102,7 +121,10 @@ export default function AbonnementPage() {
             </div>
           </div>
 
-          <Button className="bg-inverse text-inverse-foreground hover:bg-inverse/90 shadow-lg transition-all duration-200">
+          <Button
+            className="bg-inverse text-inverse-foreground hover:bg-inverse/90 shadow-lg transition-all duration-200"
+            onClick={handleViewInvoices}
+          >
             <CreditCard className="w-4 h-4 mr-2" />
             Facturen bekijken
           </Button>
@@ -137,7 +159,7 @@ export default function AbonnementPage() {
             >
               {plan.current && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-blue-500 to-purple-600 text-white border-0">
+                  <Badge className="bg-gradient-to-r from-blue-500 to-sky-600 text-white border-0">
                     Huidig plan
                   </Badge>
                 </div>
@@ -177,9 +199,10 @@ export default function AbonnementPage() {
                   "w-full transition-all duration-200",
                   plan.current
                     ? "bg-muted text-muted-foreground hover:bg-muted/80"
-                    : "bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25"
+                    : "bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
                 )}
                 disabled={plan.current}
+                onClick={() => !plan.current && handleUpgrade(plan.naam)}
               >
                 {plan.current ? (
                   <>
@@ -202,15 +225,15 @@ export default function AbonnementPage() {
       <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-600/10">
-              <Users className="w-6 h-6 text-purple-600" />
+            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+              <Users className="w-6 h-6 text-sky-600" />
             </div>
             <div>
               <h3 className="font-semibold text-foreground">Team leden uitnodigen</h3>
               <p className="text-sm text-muted-foreground">U heeft nog {currentPlan.gebruikersLimiet - currentPlan.gebruikers} plekken over in uw abonnement</p>
             </div>
           </div>
-          <Button variant="outline" className="bg-card/60 border-border/30">
+          <Button variant="outline" className="bg-card/60 border-border/30" onClick={handleTeamManage}>
             Team beheren
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>

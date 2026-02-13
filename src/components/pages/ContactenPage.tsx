@@ -102,6 +102,12 @@ export default function ContactenPage() {
   const [bedrijfFilter, setBedrijfFilter] = useState<string>('all')
   const [functieFilter, setFunctieFilter] = useState<string>('all')
 
+  const handleNewContact = () =>
+    toast({
+      title: 'Nieuw Contact',
+      description: 'Contact aanmaken functionaliteit wordt geïmplementeerd.',
+    })
+
   // Filter data
   const filteredData = contactenData.filter((contact) => {
     const matchesSearch =
@@ -133,12 +139,7 @@ export default function ContactenPage() {
         </div>
         <Button
           className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25"
-          onClick={() => {
-            toast({
-              title: 'Nieuw Contact',
-              description: 'Contact aanmaken functionaliteit wordt geïmplementeerd.',
-            })
-          }}
+          onClick={handleNewContact}
         >
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Contact

@@ -55,6 +55,9 @@ export default function MobileSidebar({
         </div>
 
         <nav aria-label="Hoofdnavigatie" className="relative z-0 flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar">
+          <p className="px-3 pb-2 text-[11px] font-semibold tracking-wide uppercase text-sidebar-foreground/45">
+            Navigatie
+          </p>
           <div className="space-y-1">
             {navigationItems.map((item) => (
               <button
@@ -67,12 +70,19 @@ export default function MobileSidebar({
                 aria-current={activePage === item.page ? 'page' : undefined}
                 className={cn(
                   // Keep sizing stable when switching pages: always render a border (transparent when inactive).
-                  'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
+                  'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                   activePage === item.page
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border'
                     : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:border-sidebar-border/60'
                 )}
               >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'absolute left-1.5 h-5 w-0.5 rounded-full transition-opacity duration-200',
+                    activePage === item.page ? 'opacity-100 bg-sidebar-foreground/85' : 'opacity-0'
+                  )}
+                />
                 <item.icon
                   className={cn(
                     'w-5 h-5',
@@ -85,7 +95,10 @@ export default function MobileSidebar({
           </div>
         </nav>
 
-        <div className="relative z-10 shrink-0 p-3 border-t border-sidebar-border">
+        <div className="relative z-10 shrink-0 p-3 border-t border-sidebar-border bg-sidebar/95">
+          <p className="px-3 pb-2 text-[11px] font-semibold tracking-wide uppercase text-sidebar-foreground/45">
+            Tools
+          </p>
           {bottomNavItems.map((item) => (
             <button
               key={item.label}
@@ -97,12 +110,19 @@ export default function MobileSidebar({
               aria-current={item.page && activePage === item.page ? 'page' : undefined}
               className={cn(
                 // Keep sizing stable when switching pages: always render a border (transparent when inactive).
-                'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
+                'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                 item.page && activePage === item.page
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border'
                   : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:border-sidebar-border/60'
               )}
             >
+              <span
+                aria-hidden="true"
+                className={cn(
+                  'absolute left-1.5 h-5 w-0.5 rounded-full transition-opacity duration-200',
+                  item.page && activePage === item.page ? 'opacity-100 bg-sidebar-foreground/85' : 'opacity-0'
+                )}
+              />
               <item.icon
                 className={cn(
                   'w-5 h-5',

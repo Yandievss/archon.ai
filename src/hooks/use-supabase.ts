@@ -1,13 +1,59 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, Database } from '@/lib/supabase'
 import { toast } from '@/hooks/use-toast'
 
 // Generic type for Supabase queries
 type QueryResult<T> = {
-  data: T[] | null
+  data: T[]
   loading: boolean
   error: string | null
   refetch: () => Promise<void>
+}
+
+// Generic hook for fetching data with refresh key support
+export function useRecords<T>(
+  tableName: string,
+  refreshKey: number = 0
+): { data: T[], loading: boolean, error: string | null, refetch: () => Promise<void> } {
+  const [data, setData] = useState<T[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
+
+  const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+
+    try {
+      setLoading(true)
+      setError(null)
+      
+      const { data: result, error: err } = await supabase
+        .from(tableName)
+        .select('*')
+      
+      if (err) throw err
+      if (requestIdRef.current !== requestId) return
+      
+      setData((result as T[]) || [])
+    } catch (err: any) {
+      if (requestIdRef.current !== requestId) return
+      setError(err.message)
+      console.error(`Error fetching ${tableName}:`, err)
+      setData([])
+    } finally {
+      if (requestIdRef.current !== requestId) return
+      setLoading(false)
+    }
+  }, [tableName])
+
+  useEffect(() => {
+    void fetchData()
+    return () => {
+      requestIdRef.current += 1
+    }
+  }, [fetchData, refreshKey])
+
+  return { data, loading, error, refetch: fetchData }
 }
 
 // Generic hook for fetching data
@@ -16,39 +62,50 @@ export function useSupabaseQuery<T>(
   select: string = '*',
   filters?: Record<string, any>
 ): QueryResult<T> {
-  const [data, setData] = useState<T[] | null>(null)
+  const [data, setData] = useState<T[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const requestIdRef = useRef(0)
+  const filtersKey = useMemo(() => JSON.stringify(filters ?? {}), [filters])
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
+    const requestId = ++requestIdRef.current
+    const parsedFilters = JSON.parse(filtersKey) as Record<string, unknown>
+
     try {
       setLoading(true)
       setError(null)
       
       let query = supabase.from(tableName).select(select)
       
-      if (filters) {
-        Object.entries(filters).forEach(([key, value]) => {
-          query = query.eq(key, value)
-        })
-      }
+      Object.entries(parsedFilters).forEach(([key, value]) => {
+        if (value == null || value === '') return
+        query = query.eq(key, value)
+      })
       
       const { data: result, error: err } = await query
       
       if (err) throw err
+      if (requestIdRef.current !== requestId) return
       
-      setData(result as T[])
+      setData((result as T[]) || [])
     } catch (err: any) {
+      if (requestIdRef.current !== requestId) return
       setError(err.message)
       console.error(`Error fetching ${tableName}:`, err)
+      setData([])
     } finally {
+      if (requestIdRef.current !== requestId) return
       setLoading(false)
     }
-  }
+  }, [filtersKey, select, tableName])
 
   useEffect(() => {
-    fetchData()
-  }, [tableName, select])
+    void fetchData()
+    return () => {
+      requestIdRef.current += 1
+    }
+  }, [fetchData])
 
   return { data, loading, error, refetch: fetchData }
 }

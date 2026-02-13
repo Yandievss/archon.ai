@@ -59,8 +59,8 @@ export default function DashboardHeader({
   return (
     <header className="sticky top-0 z-30 bg-background/30 backdrop-blur-xl border-b border-border/20">
       <div className="px-4 lg:px-6 py-3">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <button
               type="button"
               aria-label="Menu openen"
@@ -73,11 +73,21 @@ export default function DashboardHeader({
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="hidden md:flex h-9 w-44 items-center rounded-md border border-border/30 bg-card/60 backdrop-blur-xl px-3">
+            <div
+              data-testid="active-page-label-desktop"
+              className="hidden md:flex h-9 w-44 items-center rounded-md border border-border/30 bg-card/60 backdrop-blur-xl px-3"
+            >
               <span className="truncate text-sm font-medium text-foreground">{activePageLabel}</span>
             </div>
 
-            <div className="relative flex-1 max-w-lg" role="search" aria-label="Zoek">
+            <div
+              data-testid="active-page-label-mobile"
+              className="md:hidden h-9 max-w-[42vw] shrink-0 items-center rounded-md border border-border/30 bg-card/60 backdrop-blur-xl px-3 flex"
+            >
+              <span className="truncate text-sm font-medium text-foreground">{activePageLabel}</span>
+            </div>
+
+            <div className="relative min-w-0 flex-1 max-w-xl" role="search" aria-label="Zoek">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <button
                 type="button"
@@ -89,8 +99,8 @@ export default function DashboardHeader({
                 className="w-full h-9 rounded-md border border-border/30 bg-card/60 backdrop-blur-xl pl-10 pr-3 text-sm text-left text-muted-foreground hover:bg-card/75 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
               >
                 <span className="flex items-center gap-3">
-                  <span>Zoeken...</span>
-                  <span aria-hidden="true" className="ml-auto flex items-center gap-1 text-xs text-muted-foreground/80">
+                  <span className="truncate">Zoek pagina, klant of actie...</span>
+                  <span aria-hidden="true" className="ml-auto hidden lg:flex items-center gap-1 text-xs text-muted-foreground/80">
                     <kbd className="rounded border border-border/40 bg-background/40 px-1.5 py-0.5 font-mono">Ctrl</kbd>
                     <kbd className="rounded border border-border/40 bg-background/40 px-1.5 py-0.5 font-mono">K</kbd>
                   </span>
@@ -99,7 +109,7 @@ export default function DashboardHeader({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div
               aria-hidden="true"
               data-testid="page-loading-indicator"
@@ -152,7 +162,7 @@ export default function DashboardHeader({
               title="Account"
               variant="ghost"
               size="icon"
-              className="hover:bg-card/60"
+              className="hidden sm:inline-flex hover:bg-card/60"
               onClick={() =>
                 toast({
                   title: 'Account',

@@ -10,6 +10,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader'
 import DesktopSidebar from '@/components/dashboard/DesktopSidebar'
 import MobileSidebar from '@/components/dashboard/MobileSidebar'
 import DashboardCommandPalette from '@/components/dashboard/DashboardCommandPalette'
+import DashboardPageErrorBoundary from '@/components/dashboard/DashboardPageErrorBoundary'
 import { pageLabelById, validPages } from '@/components/dashboard/navigation'
 
 function PageLoading() {
@@ -431,8 +432,14 @@ export default function Dashboard() {
         <div className="p-4 lg:p-6">
           <div className="mx-auto w-full max-w-[1760px]">
             <div className="flex items-start gap-6">
-              <div className="flex-1 min-h-[calc(100dvh-10rem)]">
-                {renderPageContent()}
+              <div
+                className="flex-1 min-h-[calc(100dvh-10rem)]"
+                aria-busy={pageSwitching}
+                data-page-switching={pageSwitching ? 'true' : 'false'}
+              >
+                <DashboardPageErrorBoundary pageKey={activePage} pageLabel={activePageLabel}>
+                  {renderPageContent()}
+                </DashboardPageErrorBoundary>
               </div>
 
               {/* Static Threads Sidebar - No Animation */}

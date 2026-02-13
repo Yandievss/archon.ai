@@ -257,3 +257,10 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+@media (hover: none) and (pointer: coarse) {
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

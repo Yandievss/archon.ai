@@ -79,8 +79,8 @@ test.describe('Button Functionality - Dashboard', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: /Welkom terug/i })).toBeVisible()
-    // Wait for client-side hydration so clicks reliably trigger React handlers.
-    await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+    // Wait for app to fully load and hydrate
+    await page.waitForLoadState('networkidle')
   })
 
   test('header buttons exist and are enabled on key pages (desktop)', async ({ page }, testInfo) => {

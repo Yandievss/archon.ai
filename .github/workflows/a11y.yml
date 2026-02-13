@@ -35,8 +35,18 @@ jobs:
           npx next start -p 3000 > server.log 2>&1 &
           npx wait-on http://localhost:3000 --timeout 60000
 
-      - name: Run pa11y accessibility scan
-        run: npx pa11y http://localhost:3000 --threshold 0
+      - name: Run pa11y accessibility scan (HTML + JSON)
+        run: |
+          mkdir -p a11y-reports
+          npx pa11y http://localhost:3000 --threshold 0 --reporter html > a11y-reports/pa11y-report.html || true
+          npx pa11y http://localhost:3000 --threshold 0 --reporter json > a11y-reports/pa11y-report.json || true
+
+      - name: Upload pa11y reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pa11y-reports
+          path: a11y-reports
 
       - name: Stop server
         if: always()

@@ -1,8 +1,13 @@
 import { NextResponse } from 'next/server'
-import { supabaseAdmin } from '../../../../src/lib/supabaseAdmin'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
 export async function GET() {
   const tables = [
+    'bedrijven',
+    'contacten',
+    'deals',
+    'projecten',
+    'offertes',
     'inkomsten',
     'uitgaven',
     'artikelen',
@@ -10,27 +15,36 @@ export async function GET() {
     'betalingen',
     'afspraken',
     'abonnementen',
-    'deals',
-    'projects',
-    'companies',
-    'contacts',
   ]
 
-  const results: Record<string, any> = {}
-
-  for (const table of tables) {
-    try {
-      const { data, error } = await supabaseAdmin.from(table).select('id').limit(1)
-      if (error) {
-        // If relation/table doesn't exist, Postgres returns an error — report as missing
-        results[table] = { ok: false, error: String(error.message ?? error) }
-      } else {
-        results[table] = { ok: true, example: (data && data.length > 0) ? data[0] : null }
-      }
-    } catch (err: any) {
-      results[table] = { ok: false, error: String(err?.message ?? err) }
-    }
+  let supabaseAdmin: ReturnType<typeof getSupabaseAdmin>
+  try {
+    supabaseAdmin = getSupabaseAdmin()
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error: 'Supabase admin client is not configured.',
+        details: String((err as Error)?.message ?? err),
+      },
+      { status: 503 }
+    )
   }
 
-  return NextResponse.json({ results })
+  const results = Object.fromEntries(
+    await Promise.all(
+      tables.map(async (table) => {
+        try {
+          const { data, error } = await supabaseAdmin.from(table).select('id').limit(1)
+          if (error) {
+            return [table, { ok: false, error: String(error.message ?? error) }]
+          }
+          return [table, { ok: true, example: data?.[0] ?? null }]
+        } catch (err: unknown) {
+          return [table, { ok: false, error: String((err as Error)?.message ?? err) }]
+        }
+      })
+    )
+  )
+
+  return NextResponse.json({ results }, { status: 200 })
 }

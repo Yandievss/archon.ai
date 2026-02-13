@@ -54,7 +54,7 @@ export default function MobileSidebar({
           </SheetClose>
         </div>
 
-        <nav aria-label="Hoofdnavigatie" className="flex-1 p-3 overflow-y-auto custom-scrollbar">
+        <nav aria-label="Hoofdnavigatie" className="relative z-0 flex-1 min-h-0 p-3 overflow-y-auto custom-scrollbar">
           <div className="space-y-1">
             {navigationItems.map((item) => (
               <button
@@ -84,7 +84,7 @@ export default function MobileSidebar({
           </div>
         </nav>
 
-        <div className="p-3 border-t border-sidebar-border">
+        <div className="relative z-10 shrink-0 p-3 border-t border-sidebar-border">
           {bottomNavItems.map((item) => (
             <button
               key={item.label}
@@ -115,4 +115,3 @@ export default function MobileSidebar({
     </Sheet>
   )
 }
-

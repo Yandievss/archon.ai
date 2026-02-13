@@ -19,8 +19,9 @@ export const metadata: Metadata = {
   description: "ArchonPro is een krachtige business suite voor het beheren van bedrijven, contacten, deals, offertes en projecten met AI-integratie.",
   keywords: ["ArchonPro", "Business Suite", "CRM", "Project Management", "Deals", "Offertes", "AI Assistant", "Dashboard"],
   authors: [{ name: "ArchonPro Team" }],
+  metadataBase: new URL("https://archonpro.app"),
   icons: {
-    icon: "https://z-cdn.chatglm.cn/z-ai/static/logo.svg",
+    icon: "/logo.svg",
   },
   openGraph: {
     title: "ArchonPro - Business Suite Dashboard",

@@ -20,15 +20,22 @@ node_modules
 # production
 /build
 
+# playwright
+output/
+playwright-report/
+test-results/
+
 # misc
 .DS_Store
 *.pem
 
 # debug
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+firebase-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -42,6 +49,10 @@ next-env.d.ts
 local-*
 .claude
 .z-ai-config
+.codex
+.qodo
+.roo
+.zscripts
 dev.log
 test
 prompt

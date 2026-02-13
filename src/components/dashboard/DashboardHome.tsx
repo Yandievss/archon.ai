@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ElementType } from 'react'
+import { useEffect, useId, useRef, useState, type ElementType } from 'react'
 import { useReducedMotion } from 'framer-motion'
 import {
   Activity,
@@ -147,13 +147,15 @@ function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?:
 }
 
 function Sparkline({ data, color }: { data: number[]; color: string }) {
+  const reactId = useId()
+  const gradientId = `sparkline-gradient-${reactId.replace(/:/g, '')}`
   const chartData = data.map((value, index) => ({ value, index }))
 
   return (
     <ResponsiveContainer width="100%" height={40}>
       <AreaChart data={chartData}>
         <defs>
-          <linearGradient id={`gradient-${color}`} x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.3} />
             <stop offset="100%" stopColor={color} stopOpacity={0} />
           </linearGradient>
@@ -163,7 +165,7 @@ function Sparkline({ data, color }: { data: number[]; color: string }) {
           dataKey="value"
           stroke={color}
           strokeWidth={2}
-          fill={`url(#gradient-${color})`}
+          fill={`url(#${gradientId})`}
         />
       </AreaChart>
     </ResponsiveContainer>

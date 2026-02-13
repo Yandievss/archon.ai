@@ -32,6 +32,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 // Types
 interface Contact {
@@ -130,7 +131,15 @@ export default function ContactenPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Beheer uw contactpersonen</p>
         </div>
-        <Button className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25">
+        <Button
+          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25"
+          onClick={() => {
+            toast({
+              title: 'Nieuw Contact',
+              description: 'Contact aanmaken functionaliteit wordt geïmplementeerd.',
+            })
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Contact
         </Button>
@@ -187,7 +196,13 @@ export default function ContactenPage() {
         {filteredData.map((contact) => (
           <div
             key={contact.id}
-            className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300"
+            className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300 cursor-pointer"
+            onClick={() => {
+              toast({
+                title: 'Contact Geselecteerd',
+                description: `Contact ${contact.naam} geselecteerd.`,
+              })
+            }}
           >
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
@@ -215,16 +230,41 @@ export default function ContactenPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem className="text-foreground/80">
+                  <DropdownMenuItem
+                    className="text-foreground/80"
+                    onClick={() => {
+                      toast({
+                        title: 'Contact Details',
+                        description: `Details van ${contact.naam} worden getoond.`,
+                      })
+                    }}
+                  >
                     <Eye className="w-4 h-4 mr-2" />
                     Bekijken
                   </DropdownMenuItem>
-                  <DropdownMenuItem className="text-foreground/80">
+                  <DropdownMenuItem
+                    className="text-foreground/80"
+                    onClick={() => {
+                      toast({
+                        title: 'Contact Bewerken',
+                        description: `${contact.naam} wordt bewerkt.`,
+                      })
+                    }}
+                  >
                     <Pencil className="w-4 h-4 mr-2" />
                     Bewerken
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-red-600">
+                  <DropdownMenuItem
+                    className="text-red-600"
+                    onClick={() => {
+                      toast({
+                        title: 'Contact Verwijderen',
+                        description: `${contact.naam} wordt verwijderd.`,
+                        variant: 'destructive',
+                      })
+                    }}
+                  >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Verwijderen
                   </DropdownMenuItem>

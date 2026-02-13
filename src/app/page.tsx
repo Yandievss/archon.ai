@@ -327,7 +327,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div
+      className="min-h-screen relative"
+      // Useful as a deterministic "hydration done" marker for E2E tests.
+      data-mounted={themeMounted ? 'true' : 'false'}
+    >
       <DesktopSidebar
         open={desktopSidebarOpen}
         activePage={activePage}

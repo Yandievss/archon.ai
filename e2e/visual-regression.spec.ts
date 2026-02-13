@@ -1,7 +1,10 @@
 import { test, expect } from '@playwright/test';
 
+const SKIP_SNAPSHOTS_IN_CI = !!process.env.CI;
+
 test.describe('Visual Regression - Dashboard', () => {
   test('homepage snapshot – desktop', async ({ page }) => {
+    test.skip(SKIP_SNAPSHOTS_IN_CI, 'Snapshots zijn environment-specifiek; draai lokaal met --update-snapshots.');
     await page.goto('/');
     await page.waitForLoadState('networkidle');
     
@@ -13,6 +16,7 @@ test.describe('Visual Regression - Dashboard', () => {
   });
 
   test('homepage snapshot – mobile', async ({ page }) => {
+    test.skip(SKIP_SNAPSHOTS_IN_CI, 'Snapshots zijn environment-specifiek; draai lokaal met --update-snapshots.');
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 812 });
     await page.goto('/');

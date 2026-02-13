@@ -1,6 +1,6 @@
 'use client'
 
-import { Menu, Sparkles } from 'lucide-react'
+import { Menu, Sparkles, ChevronLeft } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import { bottomNavItems, navigationItems } from '@/components/dashboard/navigation'
@@ -29,7 +29,10 @@ export default function DesktopSidebar({
         aria-expanded={open}
         aria-label={open ? 'Zijbalk inklappen' : 'Zijbalk uitklappen'}
         title={open ? 'Zijbalk inklappen' : 'Zijbalk uitklappen'}
-        className="hidden lg:flex fixed left-4 top-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-xl border border-border/30 hover:bg-card/75 transition-all duration-200 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        className={cn(
+          'hidden lg:flex fixed left-4 top-4 z-50 p-2 rounded-lg bg-card/60 backdrop-blur-xl border border-border/30 hover:bg-card/75 transition-all duration-200 text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+          open && 'hidden'
+        )}
       >
         <Menu className="w-5 h-5" />
       </button>
@@ -42,7 +45,7 @@ export default function DesktopSidebar({
           open ? 'translate-x-0' : '-translate-x-full pointer-events-none'
         )}
       >
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
               <Sparkles className="w-5 h-5 text-white" />
@@ -52,6 +55,14 @@ export default function DesktopSidebar({
               <p className="text-xs text-sidebar-foreground/60">Business Suite</p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={onToggleOpen}
+            className="p-2 rounded-lg hover:bg-sidebar-accent text-sidebar-foreground/70 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50"
+            aria-label="Zijbalk inklappen"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
         </div>
 
         <nav aria-label="Hoofdnavigatie" className="flex-1 p-3 overflow-y-auto custom-scrollbar">

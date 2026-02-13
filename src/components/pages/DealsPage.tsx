@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 // Types
 interface Deal {
@@ -124,9 +125,38 @@ function DealCard({ deal }: { deal: Deal; index?: number }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>Bewerken</DropdownMenuItem>
-            <DropdownMenuItem>Kopiëren</DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">Verwijderen</DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                toast({
+                  title: 'Deal Bewerken',
+                  description: `${deal.naam} wordt bewerkt.`,
+                })
+              }}
+            >
+              Bewerken
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => {
+                toast({
+                  title: 'Deal Kopiëren',
+                  description: `${deal.naam} wordt gekopieerd.`,
+                })
+              }}
+            >
+              Kopiëren
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => {
+                toast({
+                  title: 'Deal Verwijderen',
+                  description: `${deal.naam} wordt verwijderd.`,
+                  variant: 'destructive',
+                })
+              }}
+            >
+              Verwijderen
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -192,7 +222,15 @@ export default function DealsPage() {
               <p className="text-lg font-bold text-emerald-700">€{totalValue.toLocaleString('nl-NL')}</p>
             </div>
           </div>
-          <Button className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg shadow-purple-500/25">
+          <Button
+            className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white shadow-lg shadow-purple-500/25"
+            onClick={() => {
+              toast({
+                title: 'Nieuwe Deal',
+                description: 'Deal aanmaken functionaliteit wordt geïmplementeerd.',
+              })
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             Nieuwe Deal
           </Button>
@@ -269,7 +307,15 @@ export default function DealsPage() {
                 )}
 
                 {/* Add Deal Button */}
-                <button className="w-full p-3 border-2 border-dashed border-border/30 rounded-xl text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-card/60 transition-[color,background-color,border-color] duration-200 flex items-center justify-center gap-2 text-sm">
+                <button
+                  className="w-full p-3 border-2 border-dashed border-border/30 rounded-xl text-muted-foreground hover:text-foreground hover:border-border/50 hover:bg-card/60 transition-[color,background-color,border-color] duration-200 flex items-center justify-center gap-2 text-sm"
+                  onClick={() => {
+                    toast({
+                      title: 'Deal Toevoegen',
+                      description: 'Deal toevoegen functionaliteit wordt geïmplementeerd.',
+                    })
+                  }}
+                >
                   <Plus className="w-4 h-4" />
                   Deal toevoegen
                 </button>

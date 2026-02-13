@@ -34,6 +34,7 @@ import {
 } from '@/components/ui/select'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 // Types
 interface Bedrijf {
@@ -122,7 +123,15 @@ export default function BedrijvenPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Beheer uw bedrijfsrelaties</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25">
+        <Button
+          className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25"
+          onClick={() => {
+            toast({
+              title: 'Nieuw Bedrijf',
+              description: 'Bedrijf aanmaken functionaliteit wordt geïmplementeerd.',
+            })
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuw Bedrijf
         </Button>
@@ -202,7 +211,13 @@ export default function BedrijvenPage() {
             {paginatedData.map((bedrijf) => (
               <tr
                 key={bedrijf.id}
-                className="group border-border/20 hover:bg-muted/40 transition-colors"
+                className="group border-border/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                onClick={() => {
+                  toast({
+                    title: 'Bedrijf Geselecteerd',
+                    description: `Bedrijf ${bedrijf.naam} geselecteerd.`,
+                  })
+                }}
               >
                 <TableCell>
                   <div className="flex items-center gap-3">
@@ -253,6 +268,13 @@ export default function BedrijvenPage() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Bedrijf Details',
+                          description: `Details van ${bedrijf.naam} worden getoond.`,
+                        })
+                      }}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -260,6 +282,13 @@ export default function BedrijvenPage() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Bedrijf Bewerken',
+                          description: `${bedrijf.naam} wordt bewerkt.`,
+                        })
+                      }}
                     >
                       <Pencil className="w-4 h-4" />
                     </Button>
@@ -267,6 +296,14 @@ export default function BedrijvenPage() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Bedrijf Verwijderen',
+                          description: `${bedrijf.naam} wordt verwijderd.`,
+                          variant: 'destructive',
+                        })
+                      }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

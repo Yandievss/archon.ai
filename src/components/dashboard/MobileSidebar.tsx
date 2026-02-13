@@ -26,7 +26,7 @@ export default function MobileSidebar({
       <SheetContent
         id="mobile-sidebar"
         side="left"
-        className="bg-sidebar backdrop-blur-xl border-r border-sidebar-border text-sidebar-foreground flex flex-col w-64 p-0 lg:hidden [&>button]:hidden"
+        className="bg-sidebar backdrop-blur-xl border-r border-sidebar-border text-sidebar-foreground flex flex-col w-[min(88vw,20rem)] max-w-[20rem] p-0 lg:hidden overscroll-contain [padding-top:env(safe-area-inset-top)] [padding-bottom:env(safe-area-inset-bottom)] [&>button]:hidden"
       >
         <SheetHeader className="sr-only">
           <SheetTitle>Navigatie</SheetTitle>

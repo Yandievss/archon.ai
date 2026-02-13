@@ -43,6 +43,7 @@ export default function DashboardHeader({
   themeMounted,
   resolvedTheme,
   onToggleTheme,
+  activePageLabel,
   pageSwitching,
 }: {
   sidebarOpen: boolean
@@ -52,6 +53,7 @@ export default function DashboardHeader({
   themeMounted: boolean
   resolvedTheme: string | undefined
   onToggleTheme: () => void
+  activePageLabel: string
   pageSwitching: boolean
 }) {
   return (
@@ -71,7 +73,11 @@ export default function DashboardHeader({
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="relative flex-1 max-w-md" role="search" aria-label="Zoek">
+            <div className="hidden md:flex h-9 w-44 items-center rounded-md border border-border/30 bg-card/60 backdrop-blur-xl px-3">
+              <span className="truncate text-sm font-medium text-foreground">{activePageLabel}</span>
+            </div>
+
+            <div className="relative flex-1 max-w-lg" role="search" aria-label="Zoek">
               <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <button
                 type="button"

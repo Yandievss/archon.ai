@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   ChevronRight,
   Download,
+  Loader2,
 } from 'lucide-react'
 import {
   AreaChart,
@@ -23,6 +24,10 @@ import {
   YAxis,
 } from 'recharts'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
@@ -141,11 +146,58 @@ function StatCard({
 
 export default function InkomstenPage() {
   const [timeFilter, setTimeFilter] = useState('maand')
-  const handleNewInkomst = () =>
-    toast({
-      title: 'Nieuwe Inkomst',
-      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
-    })
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [formData, setFormData] = useState({
+    datum: new Date().toISOString().split('T')[0],
+    omschrijving: '',
+    bedrijf: '',
+    bedrag: '',
+    status: 'Openstaand',
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+
+    try {
+      const response = await fetch('/api/inkomsten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to create inkomst')
+      }
+
+      toast({
+        title: 'Succes! ✅',
+        description: `Inkomst van €${formData.bedrag} voor ${formData.bedrijf} opgeslagen.`,
+      })
+
+      // Reset form
+      setFormData({
+        datum: new Date().toISOString().split('T')[0],
+        omschrijving: '',
+        bedrijf: '',
+        bedrag: '',
+        status: 'Openstaand',
+      })
+      setDialogOpen(false)
+    } catch (error) {
+      toast({
+        title: 'Fout',
+        description: 'Kon inkomst niet opslaan. Probeer opnieuw.',
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleNewInkomst = () => {
+    setDialogOpen(true)
+  }
 
   return (
     <div className="space-y-6">
@@ -160,10 +212,94 @@ export default function InkomstenPage() {
             <Download className="w-4 h-4 mr-2" />
             Exporteren
           </Button>
-          <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200" onClick={handleNewInkomst}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nieuwe Inkomst
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200" onClick={handleNewInkomst}>
+                <Plus className="w-4 h-4 mr-2" />
+                Nieuwe Inkomst
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Nieuwe Inkomst Toevoegen</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="datum">Datum</Label>
+                  <Input
+                    id="datum"
+                    type="date"
+                    value={formData.datum}
+                    onChange={(e) => setFormData({ ...formData, datum: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bedrijf">Bedrijf</Label>
+                  <Input
+                    id="bedrijf"
+                    placeholder="Bedrijfsnaam"
+                    value={formData.bedrijf}
+                    onChange={(e) => setFormData({ ...formData, bedrijf: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="omschrijving">Omschrijving</Label>
+                  <Input
+                    id="omschrijving"
+                    placeholder="Factuur, advies, etc."
+                    value={formData.omschrijving}
+                    onChange={(e) => setFormData({ ...formData, omschrijving: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="bedrag">Bedrag (€)</Label>
+                  <Input
+                    id="bedrag"
+                    type="number"
+                    placeholder="0.00"
+                    step="0.01"
+                    value={formData.bedrag}
+                    onChange={(e) => setFormData({ ...formData, bedrag: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                    <SelectTrigger id="status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Openstaand">Openstaand</SelectItem>
+                      <SelectItem value="Betaald">Betaald</SelectItem>
+                      <SelectItem value="Vervallen">Vervallen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex gap-3 justify-end pt-4">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={loading}>
+                    Annuleren
+                  </Button>
+                  <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Opslaan...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Opslaan
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

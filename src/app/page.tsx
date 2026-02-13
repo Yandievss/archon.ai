@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, startTransition } from 'react'
+import { useState, useEffect, useRef, useTransition } from 'react'
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
 import { toast } from '@/hooks/use-toast'
@@ -148,10 +148,13 @@ export default function Dashboard() {
   const [activePage, setActivePage] = useState<string>('home')
   const [commandOpen, setCommandOpen] = useState(false)
   const [themeMounted, setThemeMounted] = useState(false)
-  const [pageSwitching, setPageSwitching] = useState(false)
+  const [pagePreloading, setPagePreloading] = useState(false)
+  const [isPageTransitionPending, startPageTransition] = useTransition()
   const navTokenRef = useRef(0)
   const { resolvedTheme, setTheme } = useTheme()
   const formattedDate = themeMounted ? getFormattedDate() : ''
+  const activePageLabel = pageLabelById.get(activePage) ?? 'Ga van start'
+  const pageSwitching = pagePreloading || isPageTransitionPending
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   const toggleDesktopSidebar = () => setDesktopSidebarOpen((open) => !open)
 
@@ -169,7 +172,7 @@ export default function Dashboard() {
     setCommandOpen(false)
 
     const token = ++navTokenRef.current
-    setPageSwitching(true)
+    setPagePreloading(true)
 
     const loader = pageLoaders[nextPage]
     void (async () => {
@@ -180,8 +183,8 @@ export default function Dashboard() {
       }
 
       if (navTokenRef.current !== token) return
-      startTransition(() => setActivePage(nextPage))
-      setPageSwitching(false)
+      startPageTransition(() => setActivePage(nextPage))
+      setPagePreloading(false)
     })()
   }
 
@@ -189,7 +192,7 @@ export default function Dashboard() {
     if (typeof window !== 'undefined') {
       window.localStorage.removeItem('archonpro.activePage')
     }
-    startTransition(() => setActivePage('home'))
+    startPageTransition(() => setActivePage('home'))
     setSidebarOpen(false)
     setCommandOpen(false)
     toast({
@@ -220,7 +223,7 @@ export default function Dashboard() {
     if (nextPage && validPages.has(nextPage) && nextPage !== activePage) {
       const token = ++navTokenRef.current
       // Avoid synchronous setState in an effect (eslint react-hooks/set-state-in-effect).
-      const rafId = requestAnimationFrame(() => setPageSwitching(true))
+      const rafId = requestAnimationFrame(() => setPagePreloading(true))
 
       const loader = pageLoaders[nextPage]
       void (async () => {
@@ -231,11 +234,32 @@ export default function Dashboard() {
         }
 
         if (navTokenRef.current !== token) return
-        startTransition(() => setActivePage(nextPage))
-        setPageSwitching(false)
+        startPageTransition(() => setActivePage(nextPage))
+        setPagePreloading(false)
       })()
       return () => cancelAnimationFrame(rafId)
     }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    // Warm the most-used page chunks shortly after first paint so first navigation feels instant.
+    const warmPages = [
+      'bedrijven',
+      'contacten',
+      'deals',
+      'offertes',
+      'projecten',
+      'agenda',
+      'ai-assistant',
+    ] as const
+
+    const timers = warmPages.map((page, index) =>
+      window.setTimeout(() => prefetchPage(page), 400 + index * 140)
+    )
+
+    return () => timers.forEach((id) => window.clearTimeout(id))
   }, [])
 
   useEffect(() => {
@@ -399,19 +423,22 @@ export default function Dashboard() {
           themeMounted={themeMounted}
           resolvedTheme={resolvedTheme}
           onToggleTheme={toggleTheme}
+          activePageLabel={activePageLabel}
           pageSwitching={pageSwitching}
         />
 
         {/* Content – min-height voorkomt springen bij paginawissel / lazy load */}
         <div className="p-4 lg:p-6">
-          <div className="flex gap-6">
-            <div className="flex-1 min-h-[70vh]">
-              {renderPageContent()}
-            </div>
-            
-            {/* Static Threads Sidebar - No Animation */}
-            <div className="hidden xl:block w-96 shrink-0 sticky top-24 self-start">
-              <StaticThreads />
+          <div className="mx-auto w-full max-w-[1760px]">
+            <div className="flex items-start gap-6">
+              <div className="flex-1 min-h-[calc(100dvh-10rem)]">
+                {renderPageContent()}
+              </div>
+
+              {/* Static Threads Sidebar - No Animation */}
+              <div className="hidden xl:block w-96 shrink-0 sticky top-24 self-start">
+                <StaticThreads />
+              </div>
             </div>
           </div>
         </div>

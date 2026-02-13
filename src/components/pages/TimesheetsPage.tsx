@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import {
   Timer,
   Plus,
@@ -34,6 +33,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useDashboardQueryNumber } from '@/hooks/use-dashboard-query-state'
 
 // Sample Data
 const timesheetStats = { dezeWeek: 32, vorigeWeek: 38, billablePercentage: 85 }
@@ -57,6 +57,8 @@ const timeEntries = [
   { id: 8, datum: "9 Feb 2025", project: "Internal", activiteit: "Training", uren: 3, billable: false },
 ]
 
+const weeks = ["10 - 16 Feb 2025", "17 - 23 Feb 2025", "24 Feb - 2 Mrt 2025"] as const
+
 // Custom Tooltip for Chart
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
   if (active && payload && payload.length) {
@@ -71,8 +73,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export default function TimesheetsPage() {
-  const weeks = ["10 - 16 Feb 2025", "17 - 23 Feb 2025", "24 Feb - 2 Mrt 2025"] as const
-  const [weekIndex, setWeekIndex] = useState(0)
+  const [weekIndex, setWeekIndex] = useDashboardQueryNumber('timesheets_week', 0, {
+    min: 0,
+    max: weeks.length - 1,
+  })
   const currentWeek = weeks[weekIndex] ?? weeks[0]
 
   const handleNewEntry = () =>
@@ -102,7 +106,7 @@ export default function TimesheetsPage() {
           <p className="text-muted-foreground">Beheer uw tijdregistratie</p>
         </div>
         <Button
-          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
+          className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
           onClick={handleNewEntry}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -138,7 +142,7 @@ export default function TimesheetsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/10">
               <Clock className="w-6 h-6 text-blue-600" />
             </div>
             <div>
@@ -150,7 +154,7 @@ export default function TimesheetsPage() {
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-sky-500/20 to-sky-600/10">
               <Timer className="w-6 h-6 text-sky-600" />
             </div>
             <div>
@@ -162,7 +166,7 @@ export default function TimesheetsPage() {
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-emerald-500/20 to-emerald-600/10">
               <TrendingUp className="w-6 h-6 text-emerald-600" />
             </div>
             <div>

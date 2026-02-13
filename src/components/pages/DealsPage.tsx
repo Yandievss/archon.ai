@@ -212,7 +212,7 @@ export default function DealsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-sky-500/10">
+            <div className="p-2 rounded-xl bg-linear-to-br from-blue-500/20 to-sky-500/10">
               <Briefcase className="w-6 h-6 text-blue-600" />
             </div>
             Deals
@@ -221,7 +221,7 @@ export default function DealsPage() {
         </div>
         <div className="flex items-center gap-3">
           {/* Total Value Card */}
-          <div className="hidden sm:flex items-center gap-3 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50 rounded-xl px-4 py-2">
+          <div className="hidden sm:flex items-center gap-3 bg-linear-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/50 rounded-xl px-4 py-2">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <div>
               <p className="text-xs text-emerald-600 font-medium">Totaal Pipeline</p>
@@ -229,7 +229,7 @@ export default function DealsPage() {
             </div>
           </div>
           <Button
-            className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
+            className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
             onClick={handleNewDeal}
           >
             <Plus className="w-4 h-4 mr-2" />
@@ -250,12 +250,12 @@ export default function DealsPage() {
             key={stat.label}
             className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 flex items-center gap-3"
           >
-            <div className={cn('p-2 rounded-lg bg-gradient-to-br', stat.color)}>
+            <div className={cn('p-2 rounded-lg bg-linear-to-br', stat.color)}>
               <stat.icon className="w-4 h-4 text-white" />
             </div>
             <div>
               <p className="text-sm text-muted-foreground">{stat.label}</p>
-              <p className={cn('text-xl font-bold bg-gradient-to-r bg-clip-text text-transparent', stat.color)}>
+              <p className={cn('text-xl font-bold bg-linear-to-r bg-clip-text text-transparent', stat.color)}>
                 {stat.value}
               </p>
             </div>
@@ -272,11 +272,11 @@ export default function DealsPage() {
           return (
             <div
               key={column.key}
-              className="flex-shrink-0 w-72 sm:w-80"
+              className="shrink-0 w-72 sm:w-80"
             >
               {/* Column Header */}
               <div className={cn(
-                'flex items-center justify-between p-3 rounded-t-xl bg-gradient-to-r border border-border/30',
+                'flex items-center justify-between p-3 rounded-t-xl bg-linear-to-r border border-border/30',
                 column.gradient
               )}>
                 <div className="flex items-center gap-2">
@@ -347,7 +347,7 @@ export default function DealsPage() {
                 })
               }
             >
-              <div className={cn('p-2 rounded-lg bg-gradient-to-br text-white', action.color)}>
+              <div className={cn('p-2 rounded-lg bg-linear-to-br text-white', action.color)}>
                 <action.icon className="w-4 h-4" />
               </div>
               <span className="text-sm font-medium text-foreground/80">{action.label}</span>

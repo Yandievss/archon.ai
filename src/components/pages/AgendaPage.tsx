@@ -1,287 +1,320 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import { motion } from 'framer-motion'
-import {
-  Calendar as CalendarIcon,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  Users,
-  Presentation,
-  Phone,
-  MapPin
-} from 'lucide-react'
+import { useState } from 'react'
+import { Calendar, Plus, Search, Clock, Users, MapPin, Video, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { toast } from '@/hooks/use-toast'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 // Types
 interface Afspraak {
-  id: number
-  tijd: string
+  id: string
   titel: string
-  type: 'Intern' | 'Klant' | 'Demo' | 'Prospect'
-  duur: string
-}
-
-interface CalendarEvent {
-  title: string
-  time: string
+  beschrijving: string
+  type: 'meeting' | 'call' | 'deadline' | 'task'
+  starttijd: string
+  eindtijd: string
+  datum: string
+  locatie: string
+  deelnemers: string[]
+  status: 'gepland' | 'bezig' | 'afgerond' | 'geannuleerd'
 }
 
 // Sample Data
-const afsprakenVandaag: Afspraak[] = [
-  { id: 1, tijd: "09:00", titel: "Team standup", type: "Intern", duur: "30 min" },
-  { id: 2, tijd: "10:30", titel: "Gesprek met ACME BV", type: "Klant", duur: "1 uur" },
-  { id: 3, tijd: "14:00", titel: "Product demo", type: "Demo", duur: "1,5 uur" },
-  { id: 4, tijd: "16:00", titel: "Sales call", type: "Prospect", duur: "45 min" },
+const afsprakenData: Afspraak[] = [
+  {
+    id: '1',
+    titel: 'Project Kick-off',
+    beschrijving: 'Kick-off meeting voor het nieuwe project',
+    type: 'meeting',
+    starttijd: '09:00',
+    eindtijd: '10:30',
+    datum: '2024-02-15',
+    locatie: 'Kantoor ACME BV',
+    deelnemers: ['Jan de Vries', 'Maria Jansen', 'Peter Bakker'],
+    status: 'gepland',
+  },
+  {
+    id: '2',
+    titel: 'Sales Call',
+    beschrijving: 'Verkoopgesprek met potentiële klant',
+    type: 'call',
+    starttijd: '14:00',
+    eindtijd: '14:30',
+    datum: '2024-02-10',
+    locatie: 'Online',
+    deelnemers: ['Jan de Vries'],
+    status: 'bezig',
+  },
+  {
+    id: '3',
+    titel: 'Deadline Review',
+    beschrijving: 'Review van project deliverables',
+    type: 'deadline',
+    starttijd: '15:00',
+    eindtijd: '17:00',
+    datum: '2024-02-20',
+    locatie: 'Kantoor TechStart',
+    deelnemers: ['Jan de Vries', 'Maria Jansen'],
+    status: 'afgerond',
+  },
+  {
+    id: '4',
+    titel: 'Team Meeting',
+    beschrijving: 'Wekelijkse team meeting',
+    type: 'meeting',
+    starttijd: '13:00',
+    eindtijd: '14:00',
+    datum: '2024-02-25',
+    locatie: 'Vergaderzaal',
+    deelnemers: ['Jan de Vries', 'Maria Jansen', 'Peter Bakker', 'Sophie de Graaf'],
+    status: 'gepland',
+  },
 ]
-
-const weekAfspraken = 8
-
-const calendarEvents: Record<number, CalendarEvent[]> = {
-  12: [{ title: "Klantgesprek", time: "10:30" }],
-  14: [{ title: "Project meeting", time: "14:00" }],
-  15: [{ title: "Deadline offerte", time: "17:00" }],
-  20: [{ title: "Workshop", time: "09:00" }],
-  22: [{ title: "Team building", time: "15:00" }],
-  25: [{ title: "Review", time: "11:00" }],
-  28: [{ title: "Contract signing", time: "10:00" }],
-}
-
-// Type Icon Component
-function TypeIcon({ type }: { type: Afspraak['type'] }) {
-  const icons = {
-    Intern: { icon: Users, color: "text-slate-600 bg-slate-500/10" },
-    Klant: { icon: Users, color: "text-blue-500 bg-blue-500/10" },
-    Demo: { icon: Presentation, color: "text-emerald-500 bg-emerald-500/10" },
-    Prospect: { icon: Phone, color: "text-amber-500 bg-amber-500/10" },
-  }
-  const { icon: Icon, color } = icons[type]
-  return (
-    <div className={cn("p-2 rounded-lg", color)}>
-      <Icon className="w-4 h-4" />
-    </div>
-  )
-}
 
 // Type Badge Component
 function TypeBadge({ type }: { type: Afspraak['type'] }) {
   const styles = {
-    Intern: "bg-slate-500/10 text-slate-600 border-slate-500/20",
-    Klant: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    Demo: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-    Prospect: "bg-amber-500/10 text-amber-600 border-amber-500/20",
+    meeting: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    call: 'bg-green-500/10 text-green-600 border-green-500/20',
+    deadline: 'bg-red-500/10 text-red-600 border-red-500/20',
+    task: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  }
+
+  const labels = {
+    meeting: 'Meeting',
+    call: 'Call',
+    deadline: 'Deadline',
+    task: 'Task',
   }
 
   return (
-    <span className={cn("text-xs px-2 py-0.5 rounded-full border", styles[type])}>
-      {type}
+    <span className={cn('text-xs px-2.5 py-0.5 rounded-full border font-medium', styles[type])}>
+      {labels[type]}
     </span>
   )
 }
 
-// Afspraak Card Component
-function AfspraakCard({ afspraak }: { afspraak: Afspraak; index?: number }) {
-  return (
-    <div
-      className="flex items-start gap-3 p-4 rounded-xl bg-card/40 backdrop-blur-xl border border-border/30 hover:bg-card/60 hover:shadow-md transition-[background-color,box-shadow,border-color] duration-200"
-    >
-      <TypeIcon type={afspraak.type} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-semibold text-foreground">{afspraak.tijd}</span>
-          <TypeBadge type={afspraak.type} />
-        </div>
-        <p className="text-sm font-medium text-foreground/80 mb-1">{afspraak.titel}</p>
-        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <Clock className="w-3 h-3" />
-          <span>{afspraak.duur}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Custom Calendar Component
-function CustomCalendar() {
-  const [currentDate, setCurrentDate] = useState(new Date(2025, 1, 1)) // February 2025
-  const today = 12
-
-  const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate()
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
-  const adjustedFirstDay = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1 // Adjust for Monday start
-
-  const monthNames = ['Januari', 'Februari', 'Maart', 'April', 'Mei', 'Juni', 'Juli', 'Augustus', 'September', 'Oktober', 'November', 'December']
-  const dayNames = ['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo']
-
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
+function StatusBadge({ status }: { status: Afspraak['status'] }) {
+  const styles = {
+    gepland: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    bezig: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+    afgerond: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    geannuleerd: 'bg-red-500/10 text-red-600 border-red-500/20',
   }
 
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))
-  }
-
-  const days: ReactNode[] = []
-  for (let i = 0; i < adjustedFirstDay; i++) {
-    days.push(<div key={`empty-${i}`} className="w-8 h-8" />)
-  }
-  for (let day = 1; day <= daysInMonth; day++) {
-    const hasEvent = calendarEvents[day]
-    const isToday = day === today
-    days.push(
-      <motion.button
-        key={day}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.95 }}
-        className={cn(
-          "w-8 h-8 rounded-lg text-sm font-medium flex flex-col items-center justify-center relative transition-[background-color,box-shadow,border-color] duration-200",
-          isToday
-            ? "bg-gradient-to-br from-blue-500 to-sky-600 text-white shadow-lg shadow-blue-500/25"
-            : hasEvent
-            ? "bg-muted text-foreground/80 hover:bg-muted/80"
-            : "text-muted-foreground hover:bg-muted/40"
-        )}
-      >
-        {day}
-        {hasEvent && !isToday && (
-          <span className="absolute bottom-1 w-1 h-1 rounded-full bg-blue-500" />
-        )}
-      </motion.button>
-    )
+  const labels = {
+    gepland: 'Gepland',
+    bezig: 'Bezig',
+    afgerond: 'Afgerond',
+    geannuleerd: 'Geannuleerd',
   }
 
   return (
-    <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5">
-      {/* Calendar Header */}
-      <div className="flex items-center justify-between mb-5">
-        <h3 className="font-semibold text-foreground">
-          {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-        </h3>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={prevMonth}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={nextMonth}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Day Names */}
-      <div className="grid grid-cols-7 gap-1 mb-2">
-        {dayNames.map((day) => (
-          <div key={day} className="w-8 h-6 flex items-center justify-center text-xs font-medium text-muted-foreground">
-            {day}
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="grid grid-cols-7 gap-1">
-        {days}
-      </div>
-    </div>
+    <span className={cn('text-xs px-2.5 py-0.5 rounded-full border font-medium', styles[status])}>
+      {labels[status]}
+    </span>
   )
 }
 
 export default function AgendaPage() {
-  const handleNewAfspraak = () => {
-    toast({
-      title: 'Nieuwe Afspraak',
-      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
-    })
-  }
+  const [searchQuery, setSearchQuery] = useState('')
+  const [typeFilter, setTypeFilter] = useState<string>('all')
+  const [selectedDate, setSelectedDate] = useState<string>('')
+
+  // Filter data
+  const filteredData = afsprakenData.filter((afspraak) => {
+    const matchesSearch = afspraak.titel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      afspraak.beschrijving.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesType = typeFilter === 'all' || afspraak.type === typeFilter
+    const matchesDate = !selectedDate || afspraak.datum === selectedDate
+    return matchesSearch && matchesType && matchesDate
+  })
+
+  // Sort data by date
+  const sortedData = filteredData.sort((a, b) => {
+    const dateA = new Date(a.datum).getTime()
+    const dateB = new Date(b.datum).getTime()
+    return dateB - dateA
+  })
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Agenda</h1>
-          <p className="text-sm text-muted-foreground">Beheer uw afspraken en planning</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-linear-to-br from-sky-500 to-blue-600">
+              <Calendar className="w-6 h-6 text-sky-600" />
+            </div>
+            Agenda
+          </h1>
+          <p className="text-muted-foreground mt-1">Beheer uw afspraken</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200" onClick={handleNewAfspraak}>
+        <Button 
+          className="bg-linear-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white shadow-lg shadow-sky-500/25"
+          onClick={() => {
+            toast({
+              title: 'Nieuwe Afspraak',
+              description: 'Afspraak aanmaken functionaliteit wordt geïmplementeerd.',
+            })
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Afspraak
         </Button>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <div className="lg:col-span-2">
-          <div>
-            <CustomCalendar />
+      {/* Filters */}
+      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="pl-10 bg-background/30 border-border/30 focus-visible:ring-sky-500/20"
+            />
           </div>
+
+          {/* Type Filter */}
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-full sm:w-40 bg-background/30 border-border/30">
+              <SelectValue placeholder="Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Types</SelectItem>
+              <SelectItem value="meeting">Meeting</SelectItem>
+              <SelectItem value="call">Call</SelectItem>
+              <SelectItem value="deadline">Deadline</SelectItem>
+              <SelectItem value="task">Task</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+      </div>
 
-        {/* Today's Schedule */}
-        <div className="space-y-4">
-          {/* Today Card */}
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-5 text-white">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-inverse/10">
-                <CalendarIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-sm text-white/70">Vandaag</p>
-                <p className="font-semibold">12 Februari 2025</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-4">
-              <div className="flex-1 h-2 bg-inverse/10 rounded-full overflow-hidden">
-                <div className="h-full w-3/4 bg-gradient-to-r from-blue-500 to-sky-500 rounded-full" />
-              </div>
-              <span className="text-xs text-white/70">76% bezet</span>
-            </div>
-          </div>
-
-          {/* Appointments */}
-          <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-foreground">Afspraken</h3>
-              <Badge variant="secondary" className="text-xs">
-                {afsprakenVandaag.length} vandaag
-              </Badge>
-            </div>
-            <div className="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
-              {afsprakenVandaag.map((afspraak, index) => (
-                <AfspraakCard key={afspraak.id} afspraak={afspraak} index={index} />
-              ))}
-            </div>
-          </div>
-
-          {/* Week Stats */}
-          <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <CalendarIcon className="w-5 h-5 text-blue-500" />
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Deze week</p>
-                <p className="text-2xl font-bold text-foreground">{weekAfspraken} afspraken</p>
-              </div>
-            </div>
-            <div className="mt-3 grid grid-cols-4 gap-2">
-              {['Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za', 'Zo'].map((day, index) => (
-                <div
-                  key={day}
-                  className={cn(
-                    "w-full h-8 rounded-lg flex items-center justify-center text-xs font-medium",
-                    index < 4 ? "bg-blue-500/10 text-blue-600" : "bg-muted text-muted-foreground"
-                  )}
-                >
-                  {day}
+      {/* Calendar View */}
+      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {sortedData.map((afspraak) => (
+            <Card
+              key={afspraak.id}
+              className="group bg-card/40 border border-border/30 rounded-xl p-4 hover:shadow-lg hover:bg-card/60 hover:border-border/50 transition-all duration-200"
+            >
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold text-foreground group-hover:text-sky-500 transition-colors">
+                      {afspraak.titel}
+                    </CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                      <TypeBadge type={afspraak.type} />
+                      <span className="text-sm text-muted-foreground">
+                        {afspraak.starttijd} - {afspraak.eindtijd}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {afspraak.deelnemers.length} deelnemers
+                    </Badge>
+                  </div>
+                  <StatusBadge status={afspraak.status} />
                 </div>
-              ))}
-            </div>
-          </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+                  {afspraak.beschrijving}
+                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>{afspraak.locatie}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <Clock className="w-4 h-4" />
+                  <span>{afspraak.datum}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="w-4 h-4" />
+                  <span>{afspraak.deelnemers.join(', ')}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <Video className="w-4 h-4" />
+                  <span>Online meeting</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                  <Phone className="w-4 h-4" />
+                  <span>{afspraak.type === 'call' ? 'Call' : afspraak.type}</span>
+                </div>
+              </CardContent>
+              <CardFooter className="pt-3 border-t border-border/30">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-sky-500 hover:bg-sky-500/10"
+                    onClick={() => {
+                      toast({
+                        title: 'Afspraak Bekijken',
+                        description: `Details van "${afspraak.titel}" worden getoond.`,
+                      })
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
+                    onClick={() => {
+                      toast({
+                        title: 'Afspraak Bewerken',
+                        description: `"${afspraak.titel}" wordt bewerkt.`,
+                      })
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                    onClick={() => {
+                      toast({
+                        title: 'Afspraak Verwijderen',
+                        description: `"${afspraak.titel}" wordt verwijderd.`,
+                        variant: 'destructive',
+                      })
+                    }}
+                  >
+                    <Calendar className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardFooter>
+            </Card>
+          ))}
         </div>
+
+        {/* No results */}
+        {sortedData.length === 0 && (
+          <div className="text-center py-12">
+            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-lg font-medium text-foreground/80">Geen afspraken gevonden</h3>
+            <p className="text-muted-foreground text-sm">Probeer een andere zoekopdracht of filters</p>
+          </div>
+        )}
       </div>
     </div>
   )

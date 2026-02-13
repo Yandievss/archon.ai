@@ -92,28 +92,28 @@ export default function InstellingenPage() {
         <TabsList className="bg-card/60 backdrop-blur-xl border border-border/30 p-1 rounded-xl">
           <TabsTrigger
             value="profiel"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <User className="w-4 h-4 mr-2" />
             Profiel
           </TabsTrigger>
           <TabsTrigger
             value="bedrijf"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Building2 className="w-4 h-4 mr-2" />
             Bedrijf
           </TabsTrigger>
           <TabsTrigger
             value="notificaties"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Bell className="w-4 h-4 mr-2" />
             Notificaties
           </TabsTrigger>
           <TabsTrigger
             value="integraties"
-            className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
+            className="data-[state=active]:bg-linear-to-r data-[state=active]:from-blue-500 data-[state=active]:to-sky-600 data-[state=active]:text-white rounded-lg transition-[background-color,box-shadow,border-color] duration-200"
           >
             <Puzzle className="w-4 h-4 mr-2" />
             Integraties
@@ -130,7 +130,7 @@ export default function InstellingenPage() {
               <div className="relative">
                 <Avatar className="w-20 h-20">
                   <AvatarImage src="" />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-sky-600 text-white text-xl">
+                  <AvatarFallback className="bg-linear-to-br from-blue-500 to-sky-600 text-white text-xl">
                     IN
                   </AvatarFallback>
                 </Avatar>
@@ -244,7 +244,7 @@ export default function InstellingenPage() {
 
             <div className="mt-6 flex justify-end">
               <Button
-                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
                 onClick={() => notifySave('Profiel')}
               >
                 <Check className="w-4 h-4 mr-2" />
@@ -364,7 +364,7 @@ export default function InstellingenPage() {
 
             <div className="mt-6 flex justify-end">
               <Button
-                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
                 onClick={() => notifySave('Bedrijf')}
               >
                 <Check className="w-4 h-4 mr-2" />
@@ -461,7 +461,7 @@ export default function InstellingenPage() {
 
             <div className="mt-6 flex justify-end">
               <Button
-                className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
+                className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-[background-color,box-shadow,border-color] duration-200"
                 onClick={() => notifySave('Notificaties')}
               >
                 <Check className="w-4 h-4 mr-2" />

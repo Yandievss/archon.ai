@@ -83,19 +83,19 @@ export default function AbonnementPage() {
       </div>
 
       {/* Current Plan Card */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+      <div className="relative overflow-hidden bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
         {/* Animated Background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-sky-500/20 to-emerald-500/15 animate-pulse" />
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-[size:250px_250px]" />
+        <div className="absolute inset-0 bg-linear-to-r from-blue-500/20 via-sky-500/20 to-emerald-500/15 animate-pulse" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-size-[250px_250px]" />
 
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-sky-600 shadow-lg shadow-blue-500/25">
+            <div className="p-4 rounded-2xl bg-linear-to-br from-blue-500 to-sky-600 shadow-lg shadow-blue-500/25">
               <Crown className="w-8 h-8 text-white" />
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Badge className="bg-gradient-to-r from-amber-400 to-orange-400 text-amber-950 border-0 font-semibold">
+                <Badge className="bg-linear-to-r from-amber-400 to-orange-400 text-amber-950 border-0 font-semibold">
                   <Sparkles className="w-3 h-3 mr-1" />
                   PRO PLAN
                 </Badge>
@@ -159,7 +159,7 @@ export default function AbonnementPage() {
             >
               {plan.current && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <Badge className="bg-gradient-to-r from-blue-500 to-sky-600 text-white border-0">
+                  <Badge className="bg-linear-to-r from-blue-500 to-sky-600 text-white border-0">
                     Huidig plan
                   </Badge>
                 </div>
@@ -167,7 +167,7 @@ export default function AbonnementPage() {
 
               <div className="flex items-center gap-3 mb-4">
                 <div className={cn(
-                  "p-2 rounded-xl bg-gradient-to-br text-white",
+                  "p-2 rounded-xl bg-linear-to-br text-white",
                   plan.color
                 )}>
                   {plan.naam === "Starter" ? <Zap className="w-5 h-5" /> :
@@ -188,7 +188,7 @@ export default function AbonnementPage() {
               <ul className="space-y-2 mb-6">
                 {plan.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                     {feature}
                   </li>
                 ))}
@@ -199,7 +199,7 @@ export default function AbonnementPage() {
                   "w-full transition-all duration-200",
                   plan.current
                     ? "bg-muted text-muted-foreground hover:bg-muted/80"
-                    : "bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
+                    : "bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25"
                 )}
                 disabled={plan.current}
                 onClick={() => !plan.current && handleUpgrade(plan.naam)}
@@ -225,7 +225,7 @@ export default function AbonnementPage() {
       <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-sky-500/20 to-sky-600/10">
               <Users className="w-6 h-6 text-sky-600" />
             </div>
             <div>

@@ -1,463 +1,361 @@
 'use client'
 
 import { useState } from 'react'
-import {
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
-  Plus,
-  Calendar,
-  FileText,
-  Wallet,
-  BarChart3,
-  MoreHorizontal,
-  ChevronRight,
-  Download,
-  Loader2,
-} from 'lucide-react'
-import {
-  AreaChart,
-  Area,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { TrendingUp, Plus, Search, DollarSign, Eye, Pencil, Trash2, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { toast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
+
+// Types
+interface Inkomst {
+  id: string
+  factuurNummer: string
+  titel: string
+  bedrijf: string
+  bedrag: number
+  status: 'open' | 'verstuurd' | 'betaald' | 'overdue'
+  vervaldatum: string
+  aangemaaktOp: string
+}
 
 // Sample Data
-const inkomstenStats = {
-  maandTotaal: 45230,
-  jaarTotaal: 342500,
-  openstaand: 28400,
-  gemiddeld: 38055,
-  maandChange: 12,
-}
-
-const inkomstenData = [
-  { maand: "Jan", bedrag: 32000 },
-  { maand: "Feb", bedrag: 38000 },
-  { maand: "Mrt", bedrag: 45000 },
-  { maand: "Apr", bedrag: 42000 },
-  { maand: "Mei", bedrag: 48000 },
-  { maand: "Jun", bedrag: 52000 },
-  { maand: "Jul", bedrag: 45230 },
+const inkomstenData: Inkomst[] = [
+  {
+    id: '1',
+    factuurNummer: 'INV-2024-001',
+    titel: 'Website Redesign',
+    bedrijf: 'ACME BV',
+    bedrag: 25000,
+    status: 'betaald',
+    vervaldatum: '2024-02-01',
+    aangemaaktOp: '2024-01-15',
+  },
+  {
+    id: '2',
+    factuurNummer: 'INV-2024-002',
+    titel: 'App Development',
+    bedrijf: 'TechStart NV',
+    bedrag: 45000,
+    status: 'open',
+    vervaldatum: '2024-02-15',
+    aangemaaktOp: '2024-01-20',
+  },
+  {
+    id: '3',
+    factuurNummer: 'INV-2024-003',
+    titel: 'Consultancy Services',
+    bedrijf: 'Global Solutions',
+    bedrag: 12000,
+    status: 'verstuurd',
+    vervaldatum: '2024-01-10',
+    aangemaaktOp: '2024-01-25',
+  },
+  {
+    id: '4',
+    factuurNummer: 'INV-2024-004',
+    titel: 'SEO Optimalisatie',
+    bedrijf: 'Media Plus',
+    bedrag: 8500,
+    status: 'overdue',
+    vervaldatum: '2024-01-05',
+    aangemaaktOp: '2024-01-01',
+  },
 ]
-
-const recenteInkomsten = [
-  { id: 1, datum: "12 Feb 2025", omschrijving: "Project factuur", bedrijf: "ACME BV", bedrag: 8500, status: "Betaald" },
-  { id: 2, datum: "10 Feb 2025", omschrijving: "Consulting diensten", bedrijf: "Global Solutions", bedrag: 4200, status: "Betaald" },
-  { id: 3, datum: "8 Feb 2025", omschrijving: "Software licentie", bedrijf: "TechStart NV", bedrag: 12000, status: "Openstaand" },
-  { id: 4, datum: "5 Feb 2025", omschrijving: "Marketing campagne", bedrijf: "DigitalPro", bedrag: 6500, status: "Betaald" },
-  { id: 5, datum: "3 Feb 2025", omschrijving: "Website ontwikkeling", bedrijf: "WebCraft BV", bedrag: 15000, status: "Openstaand" },
-  { id: 6, datum: "1 Feb 2025", omschrijving: "Onderhoudscontract", bedrijf: "ServicePlus", bedrag: 3200, status: "Betaald" },
-]
-
-// Custom Tooltip
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number }[]; label?: string }) {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-popover backdrop-blur-sm px-4 py-3 rounded-xl shadow-xl border border-border">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">€{payload[0].value.toLocaleString()}</p>
-      </div>
-    )
-  }
-  return null
-}
 
 // Status Badge Component
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    Betaald: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-    Openstaand: "bg-blue-500/10 text-blue-600 border-blue-500/20",
-    Vervallen: "bg-red-500/10 text-red-600 border-red-500/20",
+function StatusBadge({ status }: { status: Inkomst['status'] }) {
+  const styles = {
+    open: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    verstuurd: 'bg-green-500/10 text-green-600 border-green-500/20',
+    betaald: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    overdue: 'bg-red-500/10 text-red-600 border-red-500/20',
+  }
+
+  const labels = {
+    open: 'Open',
+    verstuurd: 'Verstuurd',
+    betaald: 'Betaald',
+    overdue: 'Overdue',
   }
 
   return (
-    <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", styles[status])}>
-      {status}
+    <span className={cn('text-xs px-2.5 py-0.5 rounded-full border font-medium', styles[status])}>
+      {labels[status]}
     </span>
   )
 }
 
-// Stat Card Component
-function StatCard({ 
-  title, 
-  value, 
-  change, 
-  icon: Icon, 
-  color, 
-  gradient,
-  prefix = "€",
-  isPercentage = false
-}: { 
-  title: string
-  value: number
-  change?: number
-  icon: React.ElementType
-  color: string
-  gradient: string
-  prefix?: string
-  isPercentage?: boolean
-}) {
-  return (
-    <div className="group relative">
-      <div className={cn(
-        "absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-        gradient
-      )} />
-      <div className="relative bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
-        <div className="flex items-start justify-between mb-4">
-          <div className={cn("p-3 rounded-xl shadow-lg", `bg-gradient-to-br ${gradient}`)}>
-            <Icon className="w-5 h-5" style={{ color: color }} />
-          </div>
-          {change !== undefined && (
-            <div className={cn(
-              "flex items-center gap-1 text-sm font-medium px-2 py-1 rounded-full",
-              change >= 0 ? "bg-emerald-500/10 text-emerald-600" : "bg-red-500/10 text-red-600"
-            )}>
-              {change >= 0 ? (
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              ) : (
-                <ArrowDownRight className="w-3.5 h-3.5" />
-              )}
-              {Math.abs(change)}%
-            </div>
-          )}
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold text-foreground">
-            {prefix}{value.toLocaleString()}
-            {isPercentage && '%'}
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function InkomstenPage() {
-  const [timeFilter, setTimeFilter] = useState('maand')
-  const [dialogOpen, setDialogOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [formData, setFormData] = useState({
-    datum: new Date().toISOString().split('T')[0],
-    omschrijving: '',
-    bedrijf: '',
-    bedrag: '',
-    status: 'Openstaand',
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('vervaldatum')
+
+  // Filter data
+  const filteredData = inkomstenData.filter((inkomst) => {
+    const matchesSearch = inkomst.factuurNummer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inkomst.titel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      inkomst.bedrijf.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || inkomst.status === statusFilter
+    return matchesSearch && matchesStatus
   })
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
+  // Sort data
+  const sortedData = filteredData.sort((a, b) => {
+    if (sortBy === 'titel') return a.titel.localeCompare(b.titel)
+    if (sortBy === 'bedrag') return b.bedrag - a.bedrag
+    if (sortBy === 'vervaldatum') return new Date(b.vervaldatum).getTime() - new Date(a.vervaldatum).getTime()
+    return 0
+  })
 
-    try {
-      const response = await fetch('/api/inkomsten', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      })
+  // Calculate totals
+  const totaalBedrag = filteredData.reduce((sum, inkomst) => sum + inkomst.bedrag, 0)
+  const betaaldItems = filteredData.filter((item) => item.status === 'betaald')
+  const openItems = filteredData.filter((item) => item.status === 'open')
+  const overdueItems = filteredData.filter((item) => item.status === 'overdue')
 
-      if (!response.ok) {
-        throw new Error('Failed to create inkomst')
-      }
-
-      toast({
-        title: 'Succes! ✅',
-        description: `Inkomst van €${formData.bedrag} voor ${formData.bedrijf} opgeslagen.`,
-      })
-
-      // Reset form
-      setFormData({
-        datum: new Date().toISOString().split('T')[0],
-        omschrijving: '',
-        bedrijf: '',
-        bedrag: '',
-        status: 'Openstaand',
-      })
-      setDialogOpen(false)
-    } catch (error) {
-      toast({
-        title: 'Fout',
-        description: 'Kon inkomst niet opslaan. Probeer opnieuw.',
-      })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleNewInkomst = () => {
-    setDialogOpen(true)
-  }
+  const betaaldBedrag = betaaldItems.reduce((sum, item) => sum + item.bedrag, 0)
+  const openBedrag = openItems.reduce((sum, item) => sum + item.bedrag, 0)
+  const overdueBedrag = overdueItems.reduce((sum, item) => sum + item.bedrag, 0)
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Inkomsten</h1>
-          <p className="text-muted-foreground text-sm mt-1">Overzicht van alle inkomsten en facturen</p>
-        </div>
-        <div className="flex gap-3">
-          <Button variant="outline" className="bg-card/60 backdrop-blur-xl border-border/30 hover:bg-card/75">
-            <Download className="w-4 h-4 mr-2" />
-            Exporteren
-          </Button>
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25 transition-all duration-200" onClick={handleNewInkomst}>
-                <Plus className="w-4 h-4 mr-2" />
-                Nieuwe Inkomst
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>Nieuwe Inkomst Toevoegen</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="datum">Datum</Label>
-                  <Input
-                    id="datum"
-                    type="date"
-                    value={formData.datum}
-                    onChange={(e) => setFormData({ ...formData, datum: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bedrijf">Bedrijf</Label>
-                  <Input
-                    id="bedrijf"
-                    placeholder="Bedrijfsnaam"
-                    value={formData.bedrijf}
-                    onChange={(e) => setFormData({ ...formData, bedrijf: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="omschrijving">Omschrijving</Label>
-                  <Input
-                    id="omschrijving"
-                    placeholder="Factuur, advies, etc."
-                    value={formData.omschrijving}
-                    onChange={(e) => setFormData({ ...formData, omschrijving: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bedrag">Bedrag (€)</Label>
-                  <Input
-                    id="bedrag"
-                    type="number"
-                    placeholder="0.00"
-                    step="0.01"
-                    value={formData.bedrag}
-                    onChange={(e) => setFormData({ ...formData, bedrag: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
-                    <SelectTrigger id="status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Openstaand">Openstaand</SelectItem>
-                      <SelectItem value="Betaald">Betaald</SelectItem>
-                      <SelectItem value="Vervallen">Vervallen</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex gap-3 justify-end pt-4">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)} disabled={loading}>
-                    Annuleren
-                  </Button>
-                  <Button type="submit" disabled={loading} className="bg-emerald-600 hover:bg-emerald-700">
-                    {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                        Opslaan...
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4 mr-2" />
-                        Opslaan
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard
-          title="Totaal deze maand"
-          value={inkomstenStats.maandTotaal}
-          change={inkomstenStats.maandChange}
-          icon={Wallet}
-          color="#10b981"
-          gradient="from-emerald-500/20 to-emerald-600/10"
-        />
-        <StatCard
-          title="Totaal dit jaar"
-          value={inkomstenStats.jaarTotaal}
-          icon={BarChart3}
-          color="#3b82f6"
-          gradient="from-blue-500/20 to-blue-600/10"
-        />
-        <StatCard
-          title="Openstaand"
-          value={inkomstenStats.openstaand}
-          icon={FileText}
-          color="#f59e0b"
-          gradient="from-amber-500/20 to-amber-600/10"
-        />
-        <StatCard
-          title="Gemiddeld per maand"
-          value={inkomstenStats.gemiddeld}
-          icon={TrendingUp}
-          color="#0ea5e9"
-          gradient="from-sky-500/20 to-sky-600/10"
-        />
-      </div>
-
-      {/* Chart Section */}
-      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Inkomsten Trend</h3>
-            <p className="text-sm text-muted-foreground">Maandelijks overzicht van inkomsten</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex bg-muted rounded-lg p-1">
-              {['maand', 'kwartaal', 'jaar'].map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setTimeFilter(filter)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200",
-                    timeFilter === filter
-                      ? "bg-card text-foreground shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {filter.charAt(0).toUpperCase() + filter.slice(1)}
-                </button>
-              ))}
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-linear-to-br from-emerald-500/20 to-green-500/20">
+              <DollarSign className="w-6 h-6 text-emerald-600" />
             </div>
-          </div>
+            Inkomsten
+          </h1>
+          <p className="text-muted-foreground mt-1">Beheer uw inkomsten</p>
         </div>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={inkomstenData}>
-              <defs>
-                <linearGradient id="inkomstenGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis
-                dataKey="maand"
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-              />
-              <YAxis
-                axisLine={false}
-                tickLine={false}
-                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
-                tickFormatter={(value) => `€${value / 1000}k`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="bedrag"
-                stroke="#10b981"
-                strokeWidth={3}
-                fill="url(#inkomstenGradient)"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
+        <Button 
+          className="bg-linear-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white shadow-lg shadow-emerald-500/25"
+          onClick={() => {
+            toast({
+              title: 'Nieuwe Factuur',
+              description: 'Factuur aanmaken functionaliteit wordt geïmplementeerd.',
+            })
+          }}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nieuwe Factuur
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-linear-to-br from-emerald-500/10 to-green-500/20 border-emerald-500/20">
+          <CardHeader>
+            <CardTitle className="text-white">Totaal Open</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-3xl font-bold text-white mb-2">€{openBedrag.toLocaleString('nl-NL')}</div>
+            <div className="text-sm text-emerald-100">Aantal: {openItems.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-linear-to-br from-blue-500/10 to-cyan-500/20 border-blue-500/20">
+          <CardHeader>
+            <CardTitle className="text-white">Totaal Verstuurd</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-3xl font-bold text-white mb-2">€{betaaldBedrag.toLocaleString('nl-NL')}</div>
+            <div className="text-sm text-blue-100">Aantal: {betaaldItems.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-linear-to-br from-red-500/10 to-orange-500/20 border-red-500/20">
+          <CardHeader>
+            <CardTitle className="text-white">Totaal Overdue</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-3xl font-bold text-white mb-2">€{overdueBedrag.toLocaleString('nl-NL')}</div>
+            <div className="text-sm text-red-100">Aantal: {overdueItems.length}</div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-linear-to-br from-purple-500/10 to-pink-500/20 border-purple-500/20">
+          <CardHeader>
+            <CardTitle className="text-white">Totaal Bedrag</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center">
+            <div className="text-3xl font-bold text-white mb-2">€{totaalBedrag.toLocaleString('nl-NL')}</div>
+            <div className="text-sm text-purple-100">Aantal: {filteredData.length}</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoeken op factuurnummer of titel..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-background/30 border-border/30 focus-visible:ring-emerald-500/20"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40 bg-background/30 border-border/30">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Status</SelectItem>
+              <SelectItem value="open">Open</SelectItem>
+              <SelectItem value="verstuurd">Verstuurd</SelectItem>
+              <SelectItem value="betaald">Betaald</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-44 bg-background/30 border-border/30">
+              <SelectValue placeholder="Sorteren" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="titel">Titel (A-Z)</SelectItem>
+              <SelectItem value="bedrag">Bedrag</SelectItem>
+              <SelectItem value="vervaldatum">Vervaldatum</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Recent Transactions Table */}
-      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Recente Transacties</h3>
-            <p className="text-sm text-muted-foreground">Laatste inkomsten this maand</p>
-          </div>
-          <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
-            Bekijk alles
-            <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border/40">
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Datum</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Omschrijving</th>
-                <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Bedrijf</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Bedrag</th>
-                <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
-                <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">Acties</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recenteInkomsten.map((item) => (
-                <tr
-                  key={item.id}
-                  className="border-b border-border/30 hover:bg-muted/40 transition-colors"
-                >
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-emerald-500/10">
-                        <Calendar className="w-4 h-4 text-emerald-600" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">{item.datum}</span>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm font-medium text-foreground">{item.omschrijving}</span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className="text-sm text-muted-foreground">{item.bedrijf}</span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">€{item.bedrag.toLocaleString()}</span>
-                  </td>
-                  <td className="py-4 px-4 text-center">
-                    <StatusBadge status={item.status} />
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
-                      <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+      {/* Table */}
+      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-border/30 hover:bg-transparent">
+              <TableHead className="font-semibold text-muted-foreground">Factuur</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Titel</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Bedrijf</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Bedrag</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Vervaldatum</TableHead>
+              <TableHead className="font-semibold text-muted-foreground text-center">Acties</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedData.map((inkomst) => (
+              <TableRow
+                key={inkomst.id}
+                className="border-border/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                onClick={() => {
+                  toast({
+                    title: 'Factuur Geselecteerd',
+                    description: `Factuur "${inkomst.titel}" geselecteerd.`,
+                  })
+                }}
+              >
+                <TableCell className="font-medium text-foreground">{inkomst.factuurNummer}</TableCell>
+                <TableCell className="text-foreground">{inkomst.titel}</TableCell>
+                <TableCell className="text-foreground">{inkomst.bedrijf}</TableCell>
+                <TableCell className="text-foreground">€{inkomst.bedrag.toLocaleString('nl-NL')}</TableCell>
+                <TableCell>
+                  <StatusBadge status={inkomst.status} />
+                </TableCell>
+                <TableCell className="text-foreground">{inkomst.vervaldatum}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Factuur Bekijken',
+                          description: `Details van "${inkomst.titel}" worden getoond.`,
+                        })
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Factuur Bewerken',
+                          description: `"${inkomst.titel}" wordt bewerkt.`,
+                        })
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Factuur Markeren als Betaald',
+                          description: `"${inkomst.titel}" wordt gemarkeerd als betaald.`,
+                        })
+                      }}
+                    >
+                      <DollarSign className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Factuur Verwijderen',
+                          description: `"${inkomst.titel}" wordt verwijderd.`,
+                          variant: 'destructive',
+                        })
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
+
+      {/* No results */}
+      {sortedData.length === 0 && (
+        <div className="text-center py-12">
+          <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-foreground/80">Geen inkomsten gevonden</h3>
+          <p className="text-muted-foreground text-sm">Probeer een andere zoekopdracht of filters</p>
+        </div>
+      )}
     </div>
   )
 }

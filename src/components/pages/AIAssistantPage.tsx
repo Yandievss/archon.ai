@@ -1,289 +1,125 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Bot,
-  Send,
-  FileText,
-  Calendar,
-  TrendingUp,
-  FileBarChart,
-  Sparkles,
-  User,
-  Copy,
-  ThumbsUp,
-  RefreshCw
-} from 'lucide-react'
+import { useState } from 'react'
+import { Bot, Sparkles, Send, Lightbulb, Clock3, ArrowUpRight } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { toast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 
-interface Message {
-  id: number
-  role: 'assistant' | 'user'
-  content: string
-}
-
-// Sample Data
-const quickActions = [
-  { label: "Genereer Offerte", icon: FileText, color: "from-blue-500 to-blue-600" },
-  { label: "Samenvatting Week", icon: Calendar, color: "from-emerald-500 to-emerald-600" },
-  { label: "Analyseer Deals", icon: TrendingUp, color: "from-purple-500 to-purple-600" },
-  { label: "Maak Rapport", icon: FileBarChart, color: "from-amber-500 to-amber-600" },
-]
-
-const initialMessages: Message[] = [
-  { id: 1, role: "assistant", content: "Hallo! Ik ben je AI Assistant. Ik kan je helpen met het genereren van offertes, analyseren van data en het maken van rapporten. Hoe kan ik je vandaag helpen?" },
-  { id: 2, role: "user", content: "Geef me een overzicht van deze week" },
-  { id: 3, role: "assistant", content: `Natuurlijk! Hier is je weekoverzicht:
-
-📊 **Statistieken**
-- 8 afspraken gepland
-- 3 nieuwe deals (waarde: €45.000)
-- 5 taken voltooid
-
-💡 **Aanbevelingen**
-- Follow-up met ACME BV (laatste contact: 5 dagen geleden)
-- Factuur #2025-001 vervalt over 3 dagen` },
+const quickPrompts = [
+  'Vat de openstaande deals samen en markeer risico’s.',
+  'Maak een concept opvolgmail voor klanten met facturen > 30 dagen.',
+  'Welke projecten lopen risico op budgetoverschrijding?',
 ]
 
 export default function AIAssistantPage() {
-  const [messages, setMessages] = useState<Message[]>(() => initialMessages)
-  const [inputValue, setInputValue] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [prompt, setPrompt] = useState('')
 
-  const handleCopy = async (content: string) => {
-    try {
-      await navigator.clipboard.writeText(content)
-      toast({ title: 'Gekopieerd', description: 'Tekst is gekopieerd naar klembord.' })
-    } catch {
-      toast({ title: 'Kopiëren mislukt', description: 'Clipboard toegang is niet beschikbaar.', variant: 'destructive' })
+  const submitPrompt = () => {
+    if (!prompt.trim()) {
+      toast({
+        title: 'Lege prompt',
+        description: 'Voer eerst een vraag in voor de AI Assistant.',
+      })
+      return
     }
-  }
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  const handleSend = () => {
-    if (!inputValue.trim()) return
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        role: 'user',
-        content: inputValue,
-      },
-    ])
-    setInputValue('')
-    setIsTyping(true)
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponses = [
-        "Ik heb je verzoek ontvangen en ben het aan het verwerken. Een moment geduld alsjeblieft...",
-        "Dit is een interessante vraag! Laat me de relevante data analyseren om je het beste antwoord te geven.",
-        "Ik heb de informatie gevonden die je nodig hebt. Hier zijn de details:\n\n💼 **Resultaten**\n- Alle systemen werken naar behoren\n- Geen kritieke problemen gedetecteerd\n- 3 optimisatie suggesties beschikbaar",
-      ]
-      
-      const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)]
-      
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: prev.length + 1,
-          role: 'assistant',
-          content: randomResponse,
-        },
-      ])
-      setIsTyping(false)
-    }, 1500)
-  }
-
-  const handleQuickAction = (action: string) => {
-    setInputValue(action)
+    toast({
+      title: 'Prompt verzonden',
+      description: 'De AI Assistant verwerkt uw vraag in de demo-omgeving.',
+    })
+    setPrompt('')
   }
 
   return (
-    <div className="h-[calc(100vh-180px)] flex flex-col space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 shadow-lg shadow-purple-500/25">
-            <Bot className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">AI Assistant</h1>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-sm text-muted-foreground">Actief en klaar om te helpen</span>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="flex items-center gap-3 text-2xl font-bold text-foreground">
+            <span className="rounded-xl bg-linear-to-br from-violet-500/20 to-blue-500/20 p-2">
+              <Bot className="h-6 w-6 text-violet-500" />
+            </span>
+            AI Assistant
+          </h1>
+          <p className="mt-1 text-muted-foreground">Workflow-assistent voor sales, projecten en operations.</p>
         </div>
-        <Badge className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-purple-600 border-purple-500/20 px-3 py-1">
-          <Sparkles className="w-3 h-3 mr-1" />
-          Archon AI
-        </Badge>
+
+        <Button
+          className="bg-linear-to-r from-violet-500 to-blue-600 text-white hover:from-violet-600 hover:to-blue-700"
+          onClick={() =>
+            toast({
+              title: 'Nieuwe sessie',
+              description: 'Een nieuwe AI-sessie wordt gestart.',
+            })
+          }
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          Nieuwe sessie
+        </Button>
       </div>
 
-      {/* Chat Container */}
-      <div className="flex-1 bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl overflow-hidden flex flex-col hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
-          <AnimatePresence>
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-3",
-                  message.role === 'user' ? "justify-end" : "justify-start"
-                )}
-              >
-                {message.role === 'assistant' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                    <Bot className="w-4 h-4 text-white" />
-                  </div>
-                )}
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-2xl px-4 py-3",
-                    message.role === 'user'
-                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white"
-                      : "bg-muted text-foreground/80"
-                  )}
-                >
-                  <div className="whitespace-pre-line text-sm">
-                    {message.content.split('\n').map((line, i) => {
-                      if (line.startsWith('**') && line.endsWith('**')) {
-                        return <strong key={i} className="font-semibold">{line.replace(/\*\*/g, '')}</strong>
-                      }
-                      if (line.startsWith('- ')) {
-                        return <div key={i} className="flex items-start gap-2"><span>•</span><span>{line.substring(2)}</span></div>
-                      }
-                      return <div key={i}>{line}</div>
-                    })}
-                  </div>
-                  
-                  {message.role === 'assistant' && (
-                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/30">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                        onClick={() => handleCopy(message.content)}
-                      >
-                        <Copy className="w-3 h-3 mr-1" />
-                        Kopieer
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          toast({
-                            title: 'Feedback ontvangen',
-                            description: 'Bedankt! We gebruiken dit om te verbeteren.',
-                          })
-                        }
-                      >
-                        <ThumbsUp className="w-3 h-3 mr-1" />
-                        Nuttig
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-muted-foreground hover:text-foreground"
-                        onClick={() =>
-                          toast({
-                            title: 'Opnieuw genereren',
-                            description: 'Deze actie wordt binnenkort gekoppeld.',
-                          })
-                        }
-                      >
-                        <RefreshCw className="w-3 h-3 mr-1" />
-                        Opnieuw
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                {message.role === 'user' && (
-                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                    <User className="w-4 h-4 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-            ))}
-          </AnimatePresence>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Taken afgerond</CardTitle>
+          </CardHeader>
+          <CardContent className="text-2xl font-semibold text-foreground">18</CardContent>
+        </Card>
+        <Card className="bg-card/60 backdrop-blur-xl border-border/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">Gem. responstijd</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-2 text-2xl font-semibold text-foreground">
+            <Clock3 className="h-5 w-5 text-sky-500" />
+            4.2s
+          </CardContent>
+        </Card>
+        <Card className="bg-card/60 backdrop-blur-xl border-border/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-muted-foreground">AI suggesties</CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-2 text-2xl font-semibold text-foreground">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+            7 actief
+          </CardContent>
+        </Card>
+      </div>
 
-          {/* Typing Indicator */}
-          {isTyping && (
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-muted rounded-2xl px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-muted-foreground/60 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Quick Actions */}
-        <div className="p-4 border-t border-border/30 bg-card/40">
-          <p className="text-xs text-muted-foreground mb-3">Snelle acties</p>
-          <div className="flex flex-wrap gap-2">
-            {quickActions.map((action) => (
-              <Button
-                key={action.label}
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickAction(action.label)}
-                className="bg-card/60 backdrop-blur-xl border-border/30 hover:border-border/50"
-              >
-                <div className={cn("p-1 rounded mr-2 bg-gradient-to-br text-white", action.color)}>
-                  <action.icon className="w-3 h-3" />
-                </div>
-                {action.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Input */}
-        <div className="p-4 border-t border-border/30">
-          <div className="flex gap-3">
+      <Card className="bg-card/60 backdrop-blur-xl border-border/30">
+        <CardHeader>
+          <CardTitle>Vraag aan de assistant</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <Input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Typ je bericht..."
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              className="flex-1 bg-background/30 border-border/30 focus-visible:ring-2 focus-visible:ring-blue-500/20"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              placeholder="Bijv. Genereer een wekelijkse sales samenvatting..."
+              className="bg-background/40"
             />
-            <Button
-              onClick={handleSend}
-              disabled={!inputValue.trim() || isTyping}
-              className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
-            >
-              <Send className="w-4 h-4" />
+            <Button onClick={submitPrompt}>
+              <Send className="mr-2 h-4 w-4" />
+              Verstuur
             </Button>
           </div>
-        </div>
-      </div>
+
+          <div className="space-y-2">
+            {quickPrompts.map((item) => (
+              <button
+                key={item}
+                type="button"
+                className="flex w-full items-center justify-between rounded-lg border border-border/30 bg-background/20 px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-background/35"
+                onClick={() => setPrompt(item)}
+              >
+                <span>{item}</span>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

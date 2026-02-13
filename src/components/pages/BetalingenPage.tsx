@@ -1,37 +1,23 @@
 'use client'
-
-import { useState } from 'react'
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Plus,
   Calendar,
-  Wallet,
   Clock,
   AlertTriangle,
   CheckCircle2,
-  ChevronRight,
   Download,
-  Filter,
   Eye,
   CreditCard,
-  Building2,
-  Euro,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useDashboardQueryEnum } from '@/hooks/use-dashboard-query-state'
 
 // Sample Data
-const betalingenStats = {
-  teOntvangen: 28400,
-  teBetalen: 8200,
-  vandaagVervallen: 2500,
-  dezeWeek: 12300,
-}
-
 const teOntvangenBetalingen = [
   { id: 1, factuurNr: "2025-001", bedrijf: "ACME BV", bedrag: 8500, vervaldatum: "15 Feb 2025", status: "Openstaand", dagenOver: 3 },
   { id: 2, factuurNr: "2025-002", bedrijf: "Global Solutions", bedrag: 4200, vervaldatum: "12 Feb 2025", status: "Vervallen", dagenOver: -1 },
@@ -106,7 +92,7 @@ function StatCard({
   return (
     <div className="group relative">
       <div className={cn(
-        "absolute inset-0 rounded-2xl bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
+        "absolute inset-0 rounded-2xl bg-linear-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
         gradient
       )} />
       <div className={cn(
@@ -114,7 +100,7 @@ function StatCard({
         alert ? "border-red-500/20 hover:shadow-red-500/10" : "border-border/30"
       )}>
         <div className="flex items-start justify-between mb-4">
-          <div className={cn("p-3 rounded-xl shadow-lg", `bg-gradient-to-br ${gradient}`)}>
+          <div className={cn("p-3 rounded-xl shadow-lg", `bg-linear-to-br ${gradient}`)}>
             <Icon className="w-5 h-5" style={{ color: color }} />
           </div>
           {alert && (
@@ -144,7 +130,7 @@ function PaymentCard({
   const bedrijf = isTeOntvangen ? (item as typeof teOntvangenBetalingen[0]).bedrijf : (item as typeof teBetalenBetalingen[0]).leverancier
   
   return (
-    <div className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
+    <div className="group h-full bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={cn(
@@ -202,8 +188,8 @@ function PaymentCard({
             className={cn(
               "h-8 text-xs text-white shadow-lg transition-all duration-200",
               isTeOntvangen 
-                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/25"
-                : "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/25"
+                ? "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/25"
+                : "bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/25"
             )}
             onClick={() =>
               toast({
@@ -222,9 +208,69 @@ function PaymentCard({
 }
 
 export default function BetalingenPage() {
-  const [activeTab, setActiveTab] = useState('te-ontvangen')
-  const [statusFilter, setStatusFilter] = useState('alle')
-  const [periodeFilter, setPeriodeFilter] = useState('deze-maand')
+  const [activeTab, setActiveTab] = useDashboardQueryEnum(
+    'betalingen_tab',
+    'te-ontvangen',
+    ['te-ontvangen', 'te-betalen'] as const
+  )
+  const [statusFilter, setStatusFilter] = useDashboardQueryEnum(
+    'betalingen_status',
+    'alle',
+    ['alle', 'openstaand', 'vervallen', 'betaald'] as const
+  )
+  const [periodeFilter, setPeriodeFilter] = useDashboardQueryEnum(
+    'betalingen_periode',
+    'deze-maand',
+    ['deze-maand', 'vorige-maand', 'dit-kwartaal', 'dit-jaar'] as const
+  )
+  const referenceDate = new Date('2025-02-13T12:00:00')
+
+  const isInSelectedPeriod = (rawDate: string) => {
+    const parsedDate = new Date(rawDate)
+    if (Number.isNaN(parsedDate.getTime())) return false
+
+    const sameMonth =
+      parsedDate.getFullYear() === referenceDate.getFullYear() &&
+      parsedDate.getMonth() === referenceDate.getMonth()
+
+    if (periodeFilter === 'deze-maand') return sameMonth
+
+    if (periodeFilter === 'vorige-maand') {
+      const previousMonth = new Date(referenceDate.getFullYear(), referenceDate.getMonth() - 1, 1)
+      return (
+        parsedDate.getFullYear() === previousMonth.getFullYear() &&
+        parsedDate.getMonth() === previousMonth.getMonth()
+      )
+    }
+
+    if (periodeFilter === 'dit-kwartaal') {
+      const currentQuarter = Math.floor(referenceDate.getMonth() / 3)
+      return (
+        parsedDate.getFullYear() === referenceDate.getFullYear() &&
+        Math.floor(parsedDate.getMonth() / 3) === currentQuarter
+      )
+    }
+
+    return parsedDate.getFullYear() === referenceDate.getFullYear()
+  }
+
+  const applyFilters = <T extends { status: string; vervaldatum: string }>(items: T[]) => {
+    return items.filter((item) => {
+      const matchesStatus = statusFilter === 'alle' || item.status.toLowerCase() === statusFilter
+      return matchesStatus && isInSelectedPeriod(item.vervaldatum)
+    })
+  }
+
+  const filteredTeOntvangenBetalingen = applyFilters(teOntvangenBetalingen)
+  const filteredTeBetalenBetalingen = applyFilters(teBetalenBetalingen)
+  const totalTeOntvangen = filteredTeOntvangenBetalingen.reduce((sum, item) => sum + item.bedrag, 0)
+  const totalTeBetalen = filteredTeBetalenBetalingen.reduce((sum, item) => sum + item.bedrag, 0)
+  const vandaagVervallenTotaal = [...filteredTeOntvangenBetalingen, ...filteredTeBetalenBetalingen]
+    .filter((item) => item.dagenOver < 0)
+    .reduce((sum, item) => sum + item.bedrag, 0)
+  const dezeWeekTotaal = [...filteredTeOntvangenBetalingen, ...filteredTeBetalenBetalingen]
+    .filter((item) => item.dagenOver >= 0 && item.dagenOver <= 7)
+    .reduce((sum, item) => sum + item.bedrag, 0)
 
   return (
     <div className="space-y-6">
@@ -238,7 +284,9 @@ export default function BetalingenPage() {
           {/* Status Filter */}
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) =>
+              setStatusFilter(e.target.value as 'alle' | 'openstaand' | 'vervallen' | 'betaald')
+            }
             className="px-3 py-2 text-sm bg-card/60 backdrop-blur-xl border border-border/30 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="alle">Alle statussen</option>
@@ -250,7 +298,9 @@ export default function BetalingenPage() {
           {/* Periode Filter */}
           <select
             value={periodeFilter}
-            onChange={(e) => setPeriodeFilter(e.target.value)}
+            onChange={(e) =>
+              setPeriodeFilter(e.target.value as 'deze-maand' | 'vorige-maand' | 'dit-kwartaal' | 'dit-jaar')
+            }
             className="px-3 py-2 text-sm bg-card/60 backdrop-blur-xl border border-border/30 rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
             <option value="deze-maand">Deze maand</option>
@@ -279,21 +329,21 @@ export default function BetalingenPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           title="Te ontvangen"
-          value={betalingenStats.teOntvangen}
+          value={totalTeOntvangen}
           icon={ArrowDownRight}
           color="#10b981"
           gradient="from-emerald-500/20 to-emerald-600/10"
         />
         <StatCard
           title="Te betalen"
-          value={betalingenStats.teBetalen}
+          value={totalTeBetalen}
           icon={ArrowUpRight}
           color="#ef4444"
           gradient="from-red-500/20 to-red-600/10"
         />
         <StatCard
           title="Vandaag vervallen"
-          value={betalingenStats.vandaagVervallen}
+          value={vandaagVervallenTotaal}
           icon={AlertTriangle}
           color="#f59e0b"
           gradient="from-amber-500/20 to-amber-600/10"
@@ -301,7 +351,7 @@ export default function BetalingenPage() {
         />
         <StatCard
           title="Deze week"
-          value={betalingenStats.dezeWeek}
+          value={dezeWeekTotaal}
           icon={Calendar}
           color="#3b82f6"
           gradient="from-blue-500/20 to-blue-600/10"
@@ -310,7 +360,11 @@ export default function BetalingenPage() {
 
       {/* Tabs Section */}
       <div>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'te-ontvangen' | 'te-betalen')}
+          className="w-full"
+        >
           <TabsList className="bg-card/60 backdrop-blur-xl border border-border/30 p-1 mb-6">
             <TabsTrigger 
               value="te-ontvangen" 
@@ -319,7 +373,7 @@ export default function BetalingenPage() {
               <ArrowDownRight className="w-4 h-4 mr-2" />
               Te ontvangen
               <Badge variant="secondary" className="ml-2 bg-inverse/20 text-inherit">
-                {teOntvangenBetalingen.length}
+                {filteredTeOntvangenBetalingen.length}
               </Badge>
             </TabsTrigger>
             <TabsTrigger 
@@ -329,42 +383,54 @@ export default function BetalingenPage() {
               <ArrowUpRight className="w-4 h-4 mr-2" />
               Te betalen
               <Badge variant="secondary" className="ml-2 bg-inverse/20 text-inherit">
-                {teBetalenBetalingen.length}
+                {filteredTeBetalenBetalingen.length}
               </Badge>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="te-ontvangen" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {teOntvangenBetalingen.map((item, index) => (
-                <PaymentCard key={item.id} item={item} type="in" />
-              ))}
-            </div>
+            {filteredTeOntvangenBetalingen.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+                {filteredTeOntvangenBetalingen.map((item) => (
+                  <PaymentCard key={item.id} item={item} type="in" />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border/30 bg-card/60 p-8 text-center text-sm text-muted-foreground">
+                Geen te ontvangen betalingen voor de gekozen filters.
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="te-betalen" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {teBetalenBetalingen.map((item, index) => (
-                <PaymentCard key={item.id} item={item} type="out" />
-              ))}
-            </div>
+            {filteredTeBetalenBetalingen.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+                {filteredTeBetalenBetalingen.map((item) => (
+                  <PaymentCard key={item.id} item={item} type="out" />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-border/30 bg-card/60 p-8 text-center text-sm text-muted-foreground">
+                Geen te betalen posten voor de gekozen filters.
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>
 
       {/* Summary Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+      <div className="bg-linear-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-2">
             <h3 className="text-lg font-semibold">Betaaloverzicht</h3>
             <p className="text-white/80 text-sm">
-              U heeft <span className="text-emerald-400 font-semibold">€{betalingenStats.teOntvangen.toLocaleString()}</span> te ontvangen en <span className="text-red-400 font-semibold">€{betalingenStats.teBetalen.toLocaleString()}</span> te betalen
+              U heeft <span className="text-emerald-400 font-semibold">€{totalTeOntvangen.toLocaleString()}</span> te ontvangen en <span className="text-red-400 font-semibold">€{totalTeBetalen.toLocaleString()}</span> te betalen
             </p>
           </div>
           <div className="flex items-center gap-4">
             <div className="text-center px-4 py-2 bg-inverse/10 rounded-xl">
               <p className="text-2xl font-bold text-emerald-400">
-                +€{(betalingenStats.teOntvangen - betalingenStats.teBetalen).toLocaleString()}
+                €{(totalTeOntvangen - totalTeBetalen).toLocaleString()}
               </p>
               <p className="text-xs text-white/70">Netto positief</p>
             </div>

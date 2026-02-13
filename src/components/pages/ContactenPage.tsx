@@ -15,7 +15,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import {
   Select,
@@ -33,43 +32,20 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
+import { useRecords } from '@/hooks/use-supabase'
+import AddContactModal from '@/components/modals/AddContactModal'
+import { PageEmptyState, PageInlineError, PagePanel, PageSkeletonGrid } from '@/components/dashboard/PageStates'
+import { useDashboardQueryText } from '@/hooks/use-dashboard-query-state'
 
 // Types
 interface Contact {
   id: number
-  naam: string
-  functie: string
-  bedrijf: string
-  email: string
-  telefoon: string
-  tags: string[]
-}
-
-// Sample Data
-const contactenData: Contact[] = [
-  { id: 1, naam: 'Jan de Vries', functie: 'CEO', bedrijf: 'ACME BV', email: 'jan@acme.nl', telefoon: '+31 6 12345678', tags: ['Decision Maker', 'Warm Lead'] },
-  { id: 2, naam: 'Maria Jansen', functie: 'CFO', bedrijf: 'Global Solutions', email: 'maria@global.nl', telefoon: '+31 6 23456789', tags: ['Budget Houder'] },
-  { id: 3, naam: 'Peter Bakker', functie: 'CTO', bedrijf: 'TechStart NV', email: 'peter@techstart.nl', telefoon: '+31 6 34567890', tags: ['Technical'] },
-  { id: 4, naam: 'Sophie de Graaf', functie: 'Marketing Manager', bedrijf: 'Green Energy', email: 'sophie@green.nl', telefoon: '+31 6 45678901', tags: ['Marketing'] },
-  { id: 5, naam: 'Klaas van Dijk', functie: 'Operations Director', bedrijf: 'Media Plus', email: 'klaas@media.nl', telefoon: '+31 6 56789012', tags: ['Operations'] },
-  { id: 6, naam: 'Anna Vermeer', functie: 'Sales Director', bedrijf: 'Finance Hub', email: 'anna@finance.nl', telefoon: '+31 6 67890123', tags: ['Decision Maker', 'Sales'] },
-  { id: 7, naam: 'Thomas Berg', functie: 'Product Manager', bedrijf: 'HealthTech NL', email: 'thomas@health.nl', telefoon: '+31 6 78901234', tags: ['Product'] },
-  { id: 8, naam: 'Emma Smit', functie: 'HR Manager', bedrijf: 'LogiStream BV', email: 'emma@logi.nl', telefoon: '+31 6 89012345', tags: ['HR'] },
-  { id: 9, naam: 'Lucas de Boer', functie: 'IT Manager', bedrijf: 'ACME BV', email: 'lucas@acme.nl', telefoon: '+31 6 90123456', tags: ['Technical', 'IT'] },
-]
-
-// Tag colors
-const tagColors: Record<string, string> = {
-  'Decision Maker': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  'Warm Lead': 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  'Budget Houder': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  'Technical': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
-  'Marketing': 'bg-pink-500/10 text-pink-600 border-pink-500/20',
-  'Operations': 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20',
-  'Sales': 'bg-orange-500/10 text-orange-600 border-orange-500/20',
-  'Product': 'bg-indigo-500/10 text-indigo-600 border-indigo-500/20',
-  'HR': 'bg-teal-500/10 text-teal-600 border-teal-500/20',
-  'IT': 'bg-muted text-muted-foreground border-border/30',
+  voornaam: string
+  achternaam: string
+  functie: string | null
+  bedrijf: string | null
+  email: string | null
+  telefoon: string | null
 }
 
 // Get initials from name
@@ -88,7 +64,7 @@ function getAvatarGradient(name: string): string {
     'from-blue-500 to-purple-500',
     'from-emerald-500 to-teal-500',
     'from-amber-500 to-orange-500',
-    'from-pink-500 to-rose-500',
+    'from-rose-500 to-pink-500',
     'from-cyan-500 to-blue-500',
     'from-violet-500 to-purple-500',
     'from-green-500 to-emerald-500',
@@ -98,31 +74,59 @@ function getAvatarGradient(name: string): string {
 }
 
 export default function ContactenPage() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [bedrijfFilter, setBedrijfFilter] = useState<string>('all')
-  const [functieFilter, setFunctieFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useDashboardQueryText('contacten_q')
+  const [bedrijfFilter, setBedrijfFilter] = useDashboardQueryText('contacten_bedrijf', 'all')
+  const [functieFilter, setFunctieFilter] = useDashboardQueryText('contacten_functie', 'all')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  const handleNewContact = () =>
+  // Load contacts from Supabase
+  const { data: contactenData, loading, error, refetch } = useRecords<Contact>('contacten', refreshKey)
+
+  // Handle modal open/close
+  const handleNewContact = () => setIsModalOpen(true)
+
+  // Handle successful contact creation
+  const handleContactCreated = () => {
+    setRefreshKey(prev => prev + 1) // Refresh data
     toast({
-      title: 'Nieuw Contact',
-      description: 'Contact aanmaken functionaliteit wordt geïmplementeerd.',
+      title: 'Succes',
+      description: 'Contact is succesvol toegevoegd.',
     })
+  }
+
+  // Combine first and last name
+  const getNaam = (contact: Contact) => {
+    return `${contact.voornaam} ${contact.achternaam}`.trim()
+  }
+
+  // Get fallback values for optional fields
+  const getFallbackValue = (value: string | null, fallback: string) => {
+    return value || fallback
+  }
+
+  // Get unique values for filters
+  const bedrijven = [...new Set(contactenData.filter(c => c.bedrijf).map((c) => c.bedrijf!))]
+  const functies = [...new Set(contactenData.filter(c => c.functie).map((c) => c.functie!))]
+  const safeBedrijfFilter = bedrijfFilter === 'all' || bedrijven.includes(bedrijfFilter) ? bedrijfFilter : 'all'
+  const safeFunctieFilter = functieFilter === 'all' || functies.includes(functieFilter) ? functieFilter : 'all'
 
   // Filter data
   const filteredData = contactenData.filter((contact) => {
+    const naam = getNaam(contact)
+    const bedrijf = getFallbackValue(contact.bedrijf, '')
+    const functie = getFallbackValue(contact.functie, '')
+    const email = getFallbackValue(contact.email, '')
+    
     const matchesSearch =
-      contact.naam.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.bedrijf.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.functie.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesBedrijf = bedrijfFilter === 'all' || contact.bedrijf === bedrijfFilter
-    const matchesFunctie = functieFilter === 'all' || contact.functie === functieFilter
+      naam.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      bedrijf.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      functie.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesBedrijf = safeBedrijfFilter === 'all' || contact.bedrijf === safeBedrijfFilter
+    const matchesFunctie = safeFunctieFilter === 'all' || contact.functie === safeFunctieFilter
     return matchesSearch && matchesBedrijf && matchesFunctie
   })
-
-  // Get unique values for filters
-  const bedrijven = [...new Set(contactenData.map((c) => c.bedrijf))]
-  const functies = [...new Set(contactenData.map((c) => c.functie))]
 
   return (
     <div className="space-y-6">
@@ -130,7 +134,7 @@ export default function ContactenPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+            <div className="p-2 rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-500/20">
               <Users className="w-6 h-6 text-emerald-600" />
             </div>
             Contacten
@@ -138,7 +142,7 @@ export default function ContactenPage() {
           <p className="text-muted-foreground mt-1">Beheer uw contactpersonen</p>
         </div>
         <Button
-          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25"
+          className="bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25"
           onClick={handleNewContact}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -147,7 +151,7 @@ export default function ContactenPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-4">
+      <PagePanel className="p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Search */}
           <div className="relative flex-1">
@@ -161,7 +165,7 @@ export default function ContactenPage() {
           </div>
 
           {/* Bedrijf Filter */}
-          <Select value={bedrijfFilter} onValueChange={setBedrijfFilter}>
+          <Select value={safeBedrijfFilter} onValueChange={setBedrijfFilter}>
             <SelectTrigger className="w-full sm:w-48 bg-background/30 border-border/30">
               <SelectValue placeholder="Bedrijf" />
             </SelectTrigger>
@@ -176,7 +180,7 @@ export default function ContactenPage() {
           </Select>
 
           {/* Functie Filter */}
-          <Select value={functieFilter} onValueChange={setFunctieFilter}>
+          <Select value={safeFunctieFilter} onValueChange={setFunctieFilter}>
             <SelectTrigger className="w-full sm:w-48 bg-background/30 border-border/30">
               <SelectValue placeholder="Functie" />
             </SelectTrigger>
@@ -190,155 +194,185 @@ export default function ContactenPage() {
             </SelectContent>
           </Select>
         </div>
-      </div>
+      </PagePanel>
+
+      {/* Loading State */}
+      {loading && (
+        <PageSkeletonGrid />
+      )}
+
+      {/* Error State */}
+      {error && (
+        <PageInlineError
+          title="Contacten konden niet geladen worden"
+          description={error}
+          onRetry={() => void refetch()}
+        />
+      )}
 
       {/* Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredData.map((contact) => (
-          <div
-            key={contact.id}
-            className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300 cursor-pointer"
-            onClick={() => {
-              toast({
-                title: 'Contact Geselecteerd',
-                description: `Contact ${contact.naam} geselecteerd.`,
-              })
-            }}
-          >
-            {/* Header */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
-                  <AvatarFallback className={cn('font-semibold text-white bg-gradient-to-br', getAvatarGradient(contact.naam))}>
-                    {getInitials(contact.naam)}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">
-                    {contact.naam}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">{contact.functie}</p>
+      {!loading && !error && (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+          {filteredData.map((contact) => {
+            const naam = getNaam(contact)
+            return (
+              <div
+                key={contact.id}
+                className="group h-full min-h-60 bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300 cursor-pointer flex flex-col"
+                onClick={() => {
+                  toast({
+                    title: 'Contact Geselecteerd',
+                    description: `Contact ${naam} geselecteerd.`,
+                  })
+                }}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
+                      <AvatarFallback className={cn('font-semibold text-white bg-linear-to-br', getAvatarGradient(naam))}>
+                        {getInitials(naam)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">
+                        {naam}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">{getFallbackValue(contact.functie, 'Geen functie')}</p>
+                    </div>
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        className="text-foreground/80"
+                        onClick={() => {
+                          toast({
+                            title: 'Contact Details',
+                            description: `Details van ${naam} worden getoond.`,
+                          })
+                        }}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Bekijken
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-foreground/80"
+                        onClick={() => {
+                          toast({
+                            title: 'Contact Bewerken',
+                            description: `${naam} wordt bewerkt.`,
+                          })
+                        }}
+                      >
+                        <Pencil className="w-4 h-4 mr-2" />
+                        Bewerken
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => {
+                          toast({
+                            title: 'Contact Verwijderen',
+                            description: `${naam} wordt verwijderd.`,
+                            variant: 'destructive',
+                          })
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Verwijderen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Company */}
+                {contact.bedrijf && (
+                  <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                    <Building2 className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">{contact.bedrijf}</span>
+                  </div>
+                )}
+
+                {/* Contact Info */}
+                <div className="space-y-2 mb-4 flex-1">
+                  {contact.email && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <a href={`mailto:${contact.email}`} className="text-sm hover:text-emerald-600 transition-colors">
+                        {contact.email}
+                      </a>
+                    </div>
+                  )}
+                  {contact.telefoon && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <a href={`tel:${contact.telefoon}`} className="text-sm hover:text-emerald-600 transition-colors">
+                        {contact.telefoon}
+                      </a>
+                    </div>
+                  )}
+                  {!contact.email && !contact.telefoon && (
+                    <p className="text-sm text-muted-foreground italic">Geen contactgegevens</p>
+                  )}
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    className="text-foreground/80"
-                    onClick={() => {
-                      toast({
-                        title: 'Contact Details',
-                        description: `Details van ${contact.naam} worden getoond.`,
-                      })
-                    }}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Bekijken
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="text-foreground/80"
-                    onClick={() => {
-                      toast({
-                        title: 'Contact Bewerken',
-                        description: `${contact.naam} wordt bewerkt.`,
-                      })
-                    }}
-                  >
-                    <Pencil className="w-4 h-4 mr-2" />
-                    Bewerken
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => {
-                      toast({
-                        title: 'Contact Verwijderen',
-                        description: `${contact.naam} wordt verwijderd.`,
-                        variant: 'destructive',
-                      })
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Verwijderen
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* Company */}
-            <div className="flex items-center gap-2 text-muted-foreground mb-3">
-              <Building2 className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">{contact.bedrijf}</span>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Mail className="w-4 h-4 text-muted-foreground" />
-                <a href={`mailto:${contact.email}`} className="text-sm hover:text-emerald-600 transition-colors">
-                  {contact.email}
-                </a>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Phone className="w-4 h-4 text-muted-foreground" />
-                <a href={`tel:${contact.telefoon}`} className="text-sm hover:text-emerald-600 transition-colors">
-                  {contact.telefoon}
-                </a>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              {contact.tags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className={cn('text-xs font-medium', tagColors[tag] || 'bg-muted text-muted-foreground border-border/30')}
-                >
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* No results */}
-      {filteredData.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-foreground/80">Geen contacten gevonden</h3>
-          <p className="text-muted-foreground text-sm">Probeer een andere zoekopdracht of filters</p>
+            )
+          })}
         </div>
       )}
 
+      {/* No results */}
+      {!loading && !error && filteredData.length === 0 && (
+        <PageEmptyState
+          icon={Users}
+          title="Geen contacten gevonden"
+          description="Probeer een andere zoekopdracht of wis de filters."
+          actionLabel="Filters wissen"
+          onAction={() => {
+            setSearchQuery('')
+            setBedrijfFilter('all')
+            setFunctieFilter('all')
+          }}
+        />
+      )}
+
+      {/* Add Contact Modal */}
+      <AddContactModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSuccess={handleContactCreated}
+      />
+
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {[
-          { label: 'Totaal Contacten', value: contactenData.length, color: 'from-blue-500 to-purple-500' },
-          { label: 'Decision Makers', value: contactenData.filter((c) => c.tags.includes('Decision Maker')).length, color: 'from-purple-500 to-pink-500' },
-          { label: 'Warm Leads', value: contactenData.filter((c) => c.tags.includes('Warm Lead')).length, color: 'from-emerald-500 to-teal-500' },
-          { label: 'Unieke Bedrijven', value: new Set(contactenData.map((c) => c.bedrijf)).size, color: 'from-amber-500 to-orange-500' },
-        ].map((stat) => (
-          <div
-            key={stat.label}
-            className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow] duration-300"
-          >
-            <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-            <p className={cn('text-2xl font-bold bg-gradient-to-r bg-clip-text text-transparent', stat.color)}>
-              {stat.value}
-            </p>
-          </div>
-        ))}
-      </div>
+      {!loading && !error && contactenData.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Totaal Contacten', value: contactenData.length, color: 'from-blue-500 to-purple-500' },
+            { label: 'Met Bedrijf', value: contactenData.filter((c) => c.bedrijf).length, color: 'from-purple-500 to-pink-500' },
+            { label: 'Met Email', value: contactenData.filter((c) => c.email).length, color: 'from-emerald-500 to-teal-500' },
+            { label: 'Unieke Bedrijven', value: new Set(contactenData.filter(c => c.bedrijf).map((c) => c.bedrijf!)).size, color: 'from-amber-500 to-orange-500' },
+          ].map((stat) => (
+            <PagePanel
+              key={stat.label}
+              className="rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow]"
+            >
+              <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
+              <p className={cn('text-2xl font-bold bg-linear-to-r bg-clip-text text-transparent', stat.color)}>
+                {stat.value}
+              </p>
+            </PagePanel>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

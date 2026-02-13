@@ -1,6 +1,4 @@
 'use client'
-
-import { useState } from 'react'
 import {
   Package,
   Plus,
@@ -36,6 +34,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { PagePanel } from '@/components/dashboard/PageStates'
+import { useDashboardQueryText } from '@/hooks/use-dashboard-query-state'
 
 // Sample Data
 const artikelenStats = { totaal: 45, categorieen: 8 }
@@ -57,7 +57,7 @@ const categorieKleuren: Record<string, string> = {
 }
 
 export default function ArtikelenPage() {
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useDashboardQueryText('artikelen_q')
 
   const handleNieuwArtikel = () =>
     toast({
@@ -85,7 +85,7 @@ export default function ArtikelenPage() {
           <p className="text-muted-foreground">Beheer uw producten en diensten</p>
         </div>
         <Button
-          className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
+          className="bg-linear-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
           onClick={handleNieuwArtikel}
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -97,7 +97,7 @@ export default function ArtikelenPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-emerald-500/20 to-emerald-600/10">
               <Package className="w-6 h-6 text-emerald-600" />
             </div>
             <div>
@@ -109,7 +109,7 @@ export default function ArtikelenPage() {
 
         <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-6 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10">
+            <div className="p-3 rounded-xl bg-linear-to-br from-sky-500/20 to-sky-600/10">
               <Layers className="w-6 h-6 text-sky-600" />
             </div>
             <div>
@@ -121,7 +121,8 @@ export default function ArtikelenPage() {
       </div>
 
       {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <PagePanel className="p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -139,10 +140,11 @@ export default function ArtikelenPage() {
           <Filter className="w-4 h-4 mr-2" />
           Filters
         </Button>
-      </div>
+        </div>
+      </PagePanel>
 
       {/* Table */}
-      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl overflow-hidden hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
+      <PagePanel className="overflow-hidden hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
         <Table>
           <TableHeader>
             <TableRow className="border-border/30 hover:bg-transparent">
@@ -155,113 +157,121 @@ export default function ArtikelenPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredArtikelen.map((artikel) => (
-              <tr
-                key={artikel.id}
-                className="border-border/20 hover:bg-muted/40 transition-colors"
-              >
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Tag className="w-4 h-4 text-muted-foreground" />
+            {filteredArtikelen.length > 0 ? (
+              filteredArtikelen.map((artikel) => (
+                <tr
+                  key={artikel.id}
+                  className="border-border/20 hover:bg-muted/40 transition-colors"
+                >
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <Tag className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{artikel.naam}</p>
+                        <p className="text-xs text-muted-foreground">per {artikel.eenheid}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{artikel.naam}</p>
-                      <p className="text-xs text-muted-foreground">per {artikel.eenheid}</p>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={cn("font-medium", categorieKleuren[artikel.categorie])}>
+                      {artikel.categorie}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1">
+                      <Euro className="w-4 h-4 text-muted-foreground" />
+                      <span className="font-medium text-foreground">{artikel.prijs.toLocaleString()},-</span>
+                      <span className="text-xs text-muted-foreground">/{artikel.eenheid}</span>
                     </div>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className={cn("font-medium", categorieKleuren[artikel.categorie])}>
-                    {artikel.categorie}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-1">
-                    <Euro className="w-4 h-4 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{artikel.prijs.toLocaleString()},-</span>
-                    <span className="text-xs text-muted-foreground">/{artikel.eenheid}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {artikel.voorraad ? (
-                    <span className="text-muted-foreground">{artikel.voorraad === "Onbeperkt" ? "∞" : artikel.voorraad}</span>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "font-medium",
-                      artikel.status === "Actief"
-                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                        : "bg-muted text-muted-foreground border-border/30"
-                    )}
-                  >
-                    {artikel.status === "Actief" ? (
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
+                  </TableCell>
+                  <TableCell>
+                    {artikel.voorraad ? (
+                      <span className="text-muted-foreground">{artikel.voorraad === "Onbeperkt" ? "∞" : artikel.voorraad}</span>
                     ) : (
-                      <XCircle className="w-3 h-3 mr-1" />
+                      <span className="text-muted-foreground">-</span>
                     )}
-                    {artikel.status}
-                  </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "font-medium",
+                        artikel.status === "Actief"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                          : "bg-muted text-muted-foreground border-border/30"
+                      )}
+                    >
+                      {artikel.status === "Actief" ? (
+                        <CheckCircle2 className="w-3 h-3 mr-1" />
+                      ) : (
+                        <XCircle className="w-3 h-3 mr-1" />
+                      )}
+                      {artikel.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="hover:bg-muted/60">
+                          <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() =>
+                            toast({
+                              title: 'Artikel Bekijken',
+                              description: `${artikel.naam} wordt geopend.`,
+                            })
+                          }
+                        >
+                          <Eye className="w-4 h-4 mr-2" />
+                          Bekijk details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="cursor-pointer"
+                          onClick={() =>
+                            toast({
+                              title: 'Artikel Bewerken',
+                              description: `${artikel.naam} wordt bewerkt.`,
+                            })
+                          }
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Bewerken
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="cursor-pointer text-red-600 focus:text-red-600"
+                          onClick={() =>
+                            toast({
+                              title: 'Artikel Verwijderen',
+                              description: `${artikel.naam} wordt verwijderd.`,
+                              variant: 'destructive',
+                            })
+                          }
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Verwijderen
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </tr>
+              ))
+            ) : (
+              <TableRow className="border-border/20">
+                <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                  Geen artikelen gevonden voor deze zoekopdracht.
                 </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="hover:bg-muted/60">
-                        <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-40">
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() =>
-                          toast({
-                            title: 'Artikel Bekijken',
-                            description: `${artikel.naam} wordt geopend.`,
-                          })
-                        }
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Bekijk details
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="cursor-pointer"
-                        onClick={() =>
-                          toast({
-                            title: 'Artikel Bewerken',
-                            description: `${artikel.naam} wordt bewerkt.`,
-                          })
-                        }
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Bewerken
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="cursor-pointer text-red-600 focus:text-red-600"
-                        onClick={() =>
-                          toast({
-                            title: 'Artikel Verwijderen',
-                            description: `${artikel.naam} wordt verwijderd.`,
-                            variant: 'destructive',
-                          })
-                        }
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Verwijderen
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </tr>
-            ))}
+              </TableRow>
+            )}
           </TableBody>
         </Table>
-      </div>
+      </PagePanel>
     </div>
   )
 }

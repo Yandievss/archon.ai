@@ -1,21 +1,10 @@
 'use client'
 
-import {
-  FileText,
-  Plus,
-  MoreHorizontal,
-  Eye,
-  Download,
-  Send,
-  Trash2,
-  Clock,
-  CheckCircle,
-  XCircle,
-  DollarSign
-} from 'lucide-react'
+import { useState } from 'react'
+import { FileText, Plus, Search, Download, Send, Eye, Pencil, Trash2, CheckCircle2, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { toast } from '@/hooks/use-toast'
 import {
   Table,
   TableBody,
@@ -25,261 +14,182 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { toast } from '@/hooks/use-toast'
 
 // Types
 interface Offerte {
-  id: number
+  id: string
   nummer: string
-  klant: string
+  titel: string
+  bedrijf: string
   bedrag: number
-  datum: string
-  geldigTot: string
-  status: 'Openstaand' | 'Geaccepteerd' | 'Afgewezen'
+  status: 'concept' | 'verstuurd' | 'geaccepteerd' | 'geweigerd'
+  createdAt: string
+  verzondenOp: string
 }
 
 // Sample Data
-const offertes: Offerte[] = [
-  { id: 1, nummer: "2025-001", klant: "ACME BV", bedrag: 8500, datum: "10 Feb 2025", geldigTot: "24 Feb 2025", status: "Openstaand" },
-  { id: 2, nummer: "2025-002", klant: "Global Solutions", bedrag: 12000, datum: "8 Feb 2025", geldigTot: "22 Feb 2025", status: "Geaccepteerd" },
-  { id: 3, nummer: "2025-003", klant: "TechStart NV", bedrag: 25000, datum: "5 Feb 2025", geldigTot: "19 Feb 2025", status: "Openstaand" },
-  { id: 4, nummer: "2025-004", klant: "Media Plus", bedrag: 4500, datum: "1 Feb 2025", geldigTot: "15 Feb 2025", status: "Afgewezen" },
-  { id: 5, nummer: "2025-005", klant: "Green Energy", bedrag: 18000, datum: "28 Jan 2025", geldigTot: "11 Feb 2025", status: "Geaccepteerd" },
-  { id: 6, nummer: "2025-006", klant: "Innovatie Lab", bedrag: 32000, datum: "25 Jan 2025", geldigTot: "8 Feb 2025", status: "Geaccepteerd" },
-  { id: 7, nummer: "2025-007", klant: "Digital Works", bedrag: 9500, datum: "22 Jan 2025", geldigTot: "5 Feb 2025", status: "Openstaand" },
+const offertesData: Offerte[] = [
+  {
+    id: '1',
+    nummer: 'OFF-2024-001',
+    titel: 'Website Redesign',
+    bedrijf: 'ACME BV',
+    bedrag: 25000,
+    status: 'verstuurd',
+    createdAt: '2024-01-10',
+    verzondenOp: '2024-01-15'
+  },
+  {
+    id: '2',
+    nummer: 'OFF-2024-002',
+    titel: 'App Development',
+    bedrijf: 'TechStart NV',
+    bedrag: 45000,
+    status: 'geaccepteerd',
+    createdAt: '2024-01-20',
+    verzondenOp: '2024-01-22'
+  },
+  {
+    id: '3',
+    nummer: 'OFF-2024-003',
+    titel: 'SEO Optimalisatie',
+    bedrijf: 'Media Plus',
+    bedrag: 8500,
+    status: 'concept',
+    createdAt: '2024-02-01',
+    verzondenOp: '2024-02-05'
+  },
+  {
+    id: '4',
+    nummer: 'OFF-2024-004',
+    titel: 'Cloud Migration',
+    bedrijf: 'Global Solutions',
+    bedrag: 35000,
+    status: 'geweigerd',
+    createdAt: '2024-01-25',
+    verzondenOp: '2024-02-10'
+  },
 ]
 
 // Status Badge Component
 function StatusBadge({ status }: { status: Offerte['status'] }) {
   const styles = {
-    Openstaand: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-    Geaccepteerd: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-    Afgewezen: "bg-red-500/10 text-red-600 border-red-500/20",
+    concept: 'bg-gray-500/10 text-gray-600 border-gray-500/20',
+    verstuurd: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+    geaccepteerd: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+    geweigerd: 'bg-red-500/10 text-red-600 border-red-500/20',
   }
 
-  const icons = {
-    Openstaand: Clock,
-    Geaccepteerd: CheckCircle,
-    Afgewezen: XCircle,
+  const labels = {
+    concept: 'Concept',
+    verstuurd: 'Verstuurd',
+    geaccepteerd: 'Geaccepteerd',
+    geweigerd: 'Geweigerd',
   }
-
-  const Icon = icons[status]
 
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border font-medium", styles[status])}>
-      <Icon className="w-3 h-3" />
-      {status}
+    <span className={cn('text-xs px-2.5 py-0.5 rounded-full border font-medium', styles[status])}>
+      {labels[status]}
     </span>
   )
 }
 
-// Stat Card Component
-function StatCard({ label, value, icon: Icon, gradient, trend }: { label: string; value: number; icon: React.ElementType; gradient: string; trend?: string }) {
-  return (
-    <div className="relative group">
-      <div className={cn(
-        "absolute inset-0 rounded-xl bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300",
-        gradient
-      )} />
-      <div className="relative bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:shadow-lg hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
-        <div className="flex items-center gap-3">
-          <div className={cn("p-2.5 rounded-lg bg-gradient-to-br", gradient)}>
-            <Icon className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-foreground">{value}</p>
-            <p className="text-xs text-muted-foreground">{label}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Format currency
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('nl-NL', {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
-
-// Total Amount Card
-function TotalAmountCard() {
-  const totalBedrag = offertes.reduce((sum, offerte) => sum + offerte.bedrag, 0)
-  const geaccepteerdBedrag = offertes
-    .filter(o => o.status === 'Geaccepteerd')
-    .reduce((sum, o) => sum + o.bedrag, 0)
-
-  return (
-    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-6 text-white">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-sm text-white/70">Totaal Offerte Waarde</p>
-          <p className="text-3xl font-bold">{formatCurrency(totalBedrag)}</p>
-        </div>
-        <div className="p-3 rounded-xl bg-inverse/10">
-          <DollarSign className="w-6 h-6" />
-        </div>
-      </div>
-      <div className="flex items-center gap-4 mt-4">
-        <div className="flex-1">
-          <div className="flex items-center justify-between text-xs text-white/70 mb-1">
-            <span>Geaccepteerd</span>
-            <span>{formatCurrency(geaccepteerdBedrag)}</span>
-          </div>
-          <div className="h-2 bg-inverse/10 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-              style={{ width: `${(geaccepteerdBedrag / totalBedrag) * 100}%` }}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="flex items-center gap-2 mt-3 text-xs">
-        <span className="text-emerald-400">{Math.round((geaccepteerdBedrag / totalBedrag) * 100)}%</span>
-        <span className="text-white/70">van totaal geaccepteerd</span>
-      </div>
-    </div>
-  )
-}
-
-// Offerte Row Component
-function OfferteRow({ offerte }: { offerte: Offerte; index?: number }) {
-  return (
-    <tr className="group hover:bg-muted/40 transition-colors">
-      <TableCell className="font-medium">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/10 to-sky-500/10 flex items-center justify-center">
-            <FileText className="w-4 h-4 text-blue-600" />
-          </div>
-          <span className="text-foreground">{offerte.nummer}</span>
-        </div>
-      </TableCell>
-      <TableCell>
-        <span className="text-foreground/80">{offerte.klant}</span>
-      </TableCell>
-      <TableCell>
-        <span className="font-semibold text-foreground">{formatCurrency(offerte.bedrag)}</span>
-      </TableCell>
-      <TableCell>
-        <div className="text-sm">
-          <p className="text-foreground/80">{offerte.datum}</p>
-          <p className="text-xs text-muted-foreground">Geldig tot: {offerte.geldigTot}</p>
-        </div>
-      </TableCell>
-      <TableCell>
-        <StatusBadge status={offerte.status} />
-      </TableCell>
-      <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => {
-                toast({
-                  title: 'Offerte Bekijken',
-                  description: `Offerte ${offerte.nummer} voor ${offerte.klant} wordt geopend.`,
-                })
-              }}
-            >
-              <Eye className="w-4 h-4" />
-              Bekijken
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => {
-                toast({
-                  title: 'Offerte Downloaden',
-                  description: `Download wordt voorbereid voor offerte ${offerte.nummer}.`,
-                })
-              }}
-            >
-              <Download className="w-4 h-4" />
-              Downloaden
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2"
-              onClick={() => {
-                toast({
-                  title: 'Offerte Verzenden',
-                  description: `Offerte ${offerte.nummer} wordt klaargezet om te verzenden.`,
-                })
-              }}
-            >
-              <Send className="w-4 h-4" />
-              Verzenden
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              className="gap-2 text-red-600 focus:text-red-600"
-              onClick={() => {
-                toast({
-                  title: 'Offerte Verwijderen',
-                  description: `Offerte ${offerte.nummer} wordt verwijderd.`,
-                  variant: 'destructive',
-                })
-              }}
-            >
-              <Trash2 className="w-4 h-4" />
-              Verwijderen
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </TableCell>
-    </tr>
-  )
-}
-
 export default function OffertesPage() {
-  const handleNewOfferte = () => {
-    toast({
-      title: 'Nieuwe Offerte',
-      description: 'Aanmaken is nog niet gekoppeld in deze demo.',
-    })
-  }
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [sortBy, setSortBy] = useState<string>('createdAt')
 
-  const totalOffertes = offertes.length
-  const openstaandCount = offertes.filter((o) => o.status === 'Openstaand').length
-  const geaccepteerdCount = offertes.filter((o) => o.status === 'Geaccepteerd').length
-  const afgewezenCount = offertes.filter((o) => o.status === 'Afgewezen').length
-  const totalBedrag = offertes.reduce((sum, o) => sum + o.bedrag, 0)
-  const gemiddeldeWaarde = totalOffertes > 0 ? totalBedrag / totalOffertes : 0
-  const conversie = totalOffertes > 0 ? (geaccepteerdCount / totalOffertes) * 100 : 0
+  // Filter data
+  const filteredData = offertesData.filter((offerte) => {
+    const matchesSearch = offerte.titel.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      offerte.bedrijf.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesStatus = statusFilter === 'all' || offerte.status === statusFilter
+    return matchesSearch && matchesStatus
+  })
+
+  // Sort data
+  const sortedData = filteredData.sort((a, b) => {
+    if (sortBy === 'titel') return a.titel.localeCompare(b.titel)
+    if (sortBy === 'bedrag') return b.bedrag - a.bedrag
+    if (sortBy === 'createdAt') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    return 0
+  })
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Offertes</h1>
-          <p className="text-sm text-muted-foreground">Beheer uw offertes en prijsvoorstellen</p>
+          <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-linear-to-br from-blue-500/20 to-cyan-500/20">
+              <FileText className="w-6 h-6 text-blue-600" />
+            </div>
+            Offertes
+          </h1>
+          <p className="text-muted-foreground mt-1">Beheer uw offertes</p>
         </div>
-        <Button className="bg-gradient-to-r from-blue-500 to-sky-600 hover:from-blue-600 hover:to-sky-700 text-white shadow-lg shadow-blue-500/25 transition-all duration-200" onClick={handleNewOfferte}>
+        <Button 
+          className="bg-linear-to-r from-blue-500 to-cyan-600 hover:from-blue-600 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/25"
+          onClick={() => {
+            toast({
+              title: 'Nieuwe Offerte',
+              description: 'Offerte aanmaken functionaliteit wordt geïmplementeerd.',
+            })
+          }}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Nieuwe Offerte
         </Button>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Totaal" value={totalOffertes} icon={FileText} gradient="from-slate-500 to-slate-600" />
-        <StatCard label="Openstaand" value={openstaandCount} icon={Clock} gradient="from-amber-500 to-amber-600" />
-        <StatCard label="Geaccepteerd" value={geaccepteerdCount} icon={CheckCircle} gradient="from-emerald-500 to-emerald-600" />
-        <StatCard label="Afgewezen" value={afgewezenCount} icon={XCircle} gradient="from-red-500 to-red-600" />
-        <div className="col-span-2 lg:col-span-1">
-          <TotalAmountCard />
+      {/* Filters */}
+      <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoeken op titel of bedrijf..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 bg-background/30 border-border/30 focus-visible:ring-blue-500/20"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-40 bg-background/30 border-border/30">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle Status</SelectItem>
+              <SelectItem value="concept">Concept</SelectItem>
+              <SelectItem value="verstuurd">Verstuurd</SelectItem>
+              <SelectItem value="geaccepteerd">Geaccepteerd</SelectItem>
+              <SelectItem value="geweigerd">Geweigerd</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Sort */}
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full sm:w-44 bg-background/30 border-border/30">
+              <SelectValue placeholder="Sorteren" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="titel">Titel (A-Z)</SelectItem>
+              <SelectItem value="bedrag">Bedrag</SelectItem>
+              <SelectItem value="createdAt">Aangemaakt</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -287,64 +197,111 @@ export default function OffertesPage() {
       <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="hover:bg-transparent border-border/30">
-              <TableHead className="text-muted-foreground font-medium">Offerte NR</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Klant</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Bedrag</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Datum</TableHead>
-              <TableHead className="text-muted-foreground font-medium">Status</TableHead>
-              <TableHead className="text-muted-foreground font-medium w-12">Acties</TableHead>
+            <TableRow className="border-border/30 hover:bg-transparent">
+              <TableHead className="font-semibold text-muted-foreground">Nummer</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Titel</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Bedrijf</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Bedrag</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
+              <TableHead className="font-semibold text-muted-foreground">Verzonden</TableHead>
+              <TableHead className="font-semibold text-muted-foreground text-center">Acties</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {offertes.map((offerte, index) => (
-              <OfferteRow key={offerte.id} offerte={offerte} index={index} />
+            {sortedData.map((offerte) => (
+              <TableRow
+                key={offerte.id}
+                className="border-border/20 hover:bg-muted/40 transition-colors cursor-pointer"
+                onClick={() => {
+                  toast({
+                    title: 'Offerte Geselecteerd',
+                    description: `Offerte "${offerte.titel}" geselecteerd.`,
+                  })
+                }}
+              >
+                <TableCell className="font-medium text-foreground">{offerte.nummer}</TableCell>
+                <TableCell className="text-foreground">{offerte.titel}</TableCell>
+                <TableCell className="text-foreground">{offerte.bedrijf}</TableCell>
+                <TableCell className="text-foreground">€{offerte.bedrag.toLocaleString('nl-NL')}</TableCell>
+                <TableCell>
+                  <StatusBadge status={offerte.status} />
+                </TableCell>
+                <TableCell className="text-foreground">{offerte.verzondenOp}</TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Offerte Bekijken',
+                          description: `Details van "${offerte.titel}" worden getoond.`,
+                        })
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Offerte Bewerken',
+                          description: `"${offerte.titel}" wordt bewerkt.`,
+                        })
+                      }}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Offerte Verzenden',
+                          description: `"${offerte.titel}" wordt verzonden.`,
+                        })
+                      }}
+                    >
+                      <Send className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toast({
+                          title: 'Offerte Verwijderen',
+                          description: `"${offerte.titel}" wordt verwijderd.`,
+                          variant: 'destructive',
+                        })
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow,border-color] duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-amber-500/10">
-              <Clock className="w-5 h-5 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Openstaand</p>
-              <p className="text-xl font-bold text-foreground">{openstaandCount} offertes</p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Nog niet geaccepteerd</p>
+      {/* No results */}
+      {sortedData.length === 0 && (
+        <div className="text-center py-12">
+          <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-foreground/80">Geen offertes gevonden</h3>
+          <p className="text-muted-foreground text-sm">Probeer een andere zoekopdracht of filters</p>
         </div>
-
-        <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow,border-color] duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-emerald-500/10">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Conversie ratio</p>
-              <p className="text-xl font-bold text-foreground">{conversie.toFixed(1)}%</p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">{geaccepteerdCount} van {totalOffertes} geaccepteerd</p>
-        </div>
-
-        <div className="bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg transition-[background-color,box-shadow,border-color] duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-blue-500/10">
-              <DollarSign className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Gemiddelde waarde</p>
-              <p className="text-xl font-bold text-foreground">{formatCurrency(gemiddeldeWaarde)}</p>
-            </div>
-          </div>
-          <p className="text-xs text-muted-foreground mt-2">Per offerte</p>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

@@ -6,6 +6,8 @@ import {
   Eye,
   FileText,
   Import,
+  LayoutGrid,
+  LayoutList,
   Mail,
   MoreHorizontal,
   Pencil,
@@ -53,6 +55,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useDashboardQueryText } from '@/hooks/use-dashboard-query-state'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -141,16 +151,24 @@ function DisabledActionButton({
   )
 }
 
-export default function ContactenPage() {
+export default function ContactenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('contacten_q')
   const [bedrijfFilter, setBedrijfFilter] = useDashboardQueryText('contacten_bedrijf', 'all')
   const [functieFilter, setFunctieFilter] = useDashboardQueryText('contacten_functie', 'all')
   const [statusFilter, setStatusFilter] = useDashboardQueryText('contacten_status', 'all')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [contacts, setContacts] = useState<Contact[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !isModalOpen) {
+      setIsModalOpen(true)
+    }
+  }, [autoOpenCreate])
 
   // Detail drawer state
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
@@ -465,6 +483,24 @@ export default function ContactenPage() {
             <p className="text-muted-foreground mt-1">Beheer uw contactpersonen</p>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border/50 mr-2">
+              <Button
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode('grid')}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setViewMode('list')}
+              >
+                <LayoutList className="h-4 w-4" />
+              </Button>
+            </div>
             <DisabledActionButton icon={Upload} label="Import" />
             <DisabledActionButton icon={Import} label="Export" />
             <Button
@@ -589,124 +625,242 @@ export default function ContactenPage() {
 
         {/* Contact grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
-            {filteredData.map((contact) => {
-              const naam = getNaam(contact)
+          viewMode === 'grid' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
+              {filteredData.map((contact) => {
+                const naam = getNaam(contact)
 
-              return (
-                <div
-                  key={contact.id}
-                  className="group h-full min-h-60 bg-card/80 backdrop-blur-xl border border-border/40 rounded-2xl p-5 hover:shadow-xl hover:bg-card hover:border-emerald-500/30 transition-all duration-300 cursor-pointer flex flex-col"
-                  onClick={() => handleContactClick(contact)}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
-                        <AvatarFallback className={cn('font-semibold text-white bg-linear-to-br', getAvatarGradient(naam))}>
-                          {getInitials(naam)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <h3 className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">
-                          {naam}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">{contact.functie || 'Geen functie'}</p>
+                return (
+                  <div
+                    key={contact.id}
+                    className="group h-full min-h-60 bg-card/80 backdrop-blur-xl border border-border/40 rounded-2xl p-5 hover:shadow-xl hover:bg-card hover:border-emerald-500/30 transition-all duration-300 cursor-pointer flex flex-col"
+                    onClick={() => handleContactClick(contact)}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12 border-2 border-white shadow-lg">
+                          <AvatarFallback className={cn('font-semibold text-white bg-linear-to-br', getAvatarGradient(naam))}>
+                            {getInitials(naam)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <h3 className="font-semibold text-foreground group-hover:text-emerald-500 transition-colors">
+                            {naam}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{contact.functie || 'Geen functie'}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <StatusBadge status={contact.status} />
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => handleContactClick(contact)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Bekijken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleEditClick(contact, e as React.MouseEvent)}>
+                              <Pencil className="w-4 h-4 mr-2" />
+                              Bewerken
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleNoteClick(contact, e as React.MouseEvent)}>
+                              <StickyNote className="w-4 h-4 mr-2" />
+                              Notitie
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleTaakClick(contact, e as React.MouseEvent)}>
+                              <FileText className="w-4 h-4 mr-2" />
+                              Taak
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={(e) => handleDeleteClick(contact, e as React.MouseEvent)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Verwijderen
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1">
-                      <StatusBadge status={contact.status} />
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                    {contact.bedrijf && (
+                      <div className="flex items-center gap-2 text-muted-foreground mb-3">
+                        <Building2 className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">{contact.bedrijf}</span>
+                      </div>
+                    )}
+
+                    <div className="space-y-2 mb-4 flex-1">
+                      {contact.email && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Mail className="w-4 h-4 text-muted-foreground" />
+                          <a
+                            href={`mailto:${contact.email}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm hover:text-emerald-600 transition-colors"
                           >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={(e) => handleContactClick(contact)}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Bekijken
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleEditClick(contact, e as React.MouseEvent)}>
-                            <Pencil className="w-4 h-4 mr-2" />
-                            Bewerken
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleNoteClick(contact, e as React.MouseEvent)}>
-                            <StickyNote className="w-4 h-4 mr-2" />
-                            Notitie
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={(e) => handleTaakClick(contact, e as React.MouseEvent)}>
-                            <FileText className="w-4 h-4 mr-2" />
-                            Taak
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={(e) => handleDeleteClick(contact, e as React.MouseEvent)}
+                            {contact.email}
+                          </a>
+                        </div>
+                      )}
+
+                      {contact.telefoon && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Phone className="w-4 h-4 text-muted-foreground" />
+                          <a
+                            href={`tel:${contact.telefoon}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="text-sm hover:text-emerald-600 transition-colors"
                           >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Verwijderen
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
+                            {contact.telefoon}
+                          </a>
+                        </div>
+                      )}
 
-                  {contact.bedrijf && (
-                    <div className="flex items-center gap-2 text-muted-foreground mb-3">
-                      <Building2 className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm">{contact.bedrijf}</span>
+                      {!contact.email && !contact.telefoon && (
+                        <p className="text-sm text-muted-foreground italic">Geen contactgegevens</p>
+                      )}
                     </div>
-                  )}
 
-                  <div className="space-y-2 mb-4 flex-1">
-                    {contact.email && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Mail className="w-4 h-4 text-muted-foreground" />
-                        <a
-                          href={`mailto:${contact.email}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-sm hover:text-emerald-600 transition-colors"
-                        >
-                          {contact.email}
-                        </a>
+                    {contact.notities && (
+                      <div className="mt-auto pt-3 border-t border-border/30">
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          <StickyNote className="w-3 h-3 inline mr-1" />
+                          {contact.notities}
+                        </p>
                       </div>
                     )}
-
-                    {contact.telefoon && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Phone className="w-4 h-4 text-muted-foreground" />
-                        <a
-                          href={`tel:${contact.telefoon}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="text-sm hover:text-emerald-600 transition-colors"
-                        >
-                          {contact.telefoon}
-                        </a>
-                      </div>
-                    )}
-
-                    {!contact.email && !contact.telefoon && (
-                      <p className="text-sm text-muted-foreground italic">Geen contactgegevens</p>
-                    )}
                   </div>
-
-                  {contact.notities && (
-                    <div className="mt-auto pt-3 border-t border-border/30">
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        <StickyNote className="w-3 h-3 inline mr-1" />
-                        {contact.notities}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-xl overflow-hidden">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-[300px]">Naam</TableHead>
+                    <TableHead>Bedrijf</TableHead>
+                    <TableHead>Functie</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Telefoon</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredData.map((contact) => {
+                    const naam = getNaam(contact)
+                    return (
+                      <TableRow
+                        key={contact.id}
+                        className="hover:bg-muted/30 cursor-pointer transition-colors"
+                        onClick={() => handleContactClick(contact)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8 border border-white/10 shadow-sm">
+                              <AvatarFallback className={cn('text-xs font-semibold text-white bg-linear-to-br', getAvatarGradient(naam))}>
+                                {getInitials(naam)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium text-foreground">{naam}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {contact.bedrijf ? (
+                            <div className="flex items-center gap-2">
+                              <Building2 className="w-4 h-4 text-muted-foreground" />
+                              <span>{contact.bedrijf}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>{contact.functie || <span className="text-muted-foreground">-</span>}</TableCell>
+                        <TableCell>
+                          {contact.email ? (
+                            <a
+                              href={`mailto:${contact.email}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-emerald-600 transition-colors"
+                            >
+                              {contact.email}
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {contact.telefoon ? (
+                            <a
+                              href={`tel:${contact.telefoon}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="hover:text-emerald-600 transition-colors"
+                            >
+                              {contact.telefoon}
+                            </a>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={contact.status} />
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={(e) => handleContactClick(contact)}>
+                                <Eye className="w-4 h-4 mr-2" />
+                                Bekijken
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handleEditClick(contact, e as React.MouseEvent)}>
+                                <Pencil className="w-4 h-4 mr-2" />
+                                Bewerken
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handleNoteClick(contact, e as React.MouseEvent)}>
+                                <StickyNote className="w-4 h-4 mr-2" />
+                                Notitie
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={(e) => handleTaakClick(contact, e as React.MouseEvent)}>
+                                <FileText className="w-4 h-4 mr-2" />
+                                Taak
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={(e) => handleDeleteClick(contact, e as React.MouseEvent)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Verwijderen
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )
         )}
 
         {/* Empty state */}

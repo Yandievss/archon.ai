@@ -60,3 +60,17 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Database files
+*.db
+*.db-journal
+prisma/*.db
+prisma/*.db-journal
+db/*.db
+
+# IDE specific
+.windsurf/
+.vscode/settings.json
+
+# Project specific
+contacten-page-stats.png

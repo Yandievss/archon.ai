@@ -14,6 +14,8 @@
     "e2e:ui": "playwright test --ui",
     "e2e:headed": "playwright test --headed",
     "e2e:report": "playwright show-report output/playwright/report",
+    "qa:dashboard": "npm run typecheck && npm run lint && npm run build && npm run e2e -- e2e/dashboard.e2e.spec.ts --project=chromium --workers=1 && npm run e2e -- e2e/buttons-all-pages.spec.ts --project=chromium --workers=1 && npm run e2e -- e2e/offertes-page.e2e.spec.ts --project=chromium --workers=1",
+    "qa:dashboard:local": "npm run typecheck && npm run lint && PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run e2e -- e2e/dashboard.e2e.spec.ts --project=chromium --workers=1 && PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run e2e -- e2e/buttons-all-pages.spec.ts --project=chromium --workers=1 && PLAYWRIGHT_BASE_URL=http://127.0.0.1:3000 npm run e2e -- e2e/offertes-page.e2e.spec.ts --project=chromium --workers=1",
     "release": "standard-version",
     "release:patch": "standard-version --release-as patch",
     "release:minor": "standard-version --release-as minor",

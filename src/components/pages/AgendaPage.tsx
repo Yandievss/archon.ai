@@ -11,9 +11,11 @@ import {
   Trash2,
   Users,
   Video,
+  Edit,
 } from 'lucide-react'
 
 import AddAfspraakModal from '@/components/modals/AddAfspraakModal'
+import EditAfspraakModal from '@/components/modals/EditAfspraakModal'
 import { PageEmptyState, PageInlineError, PagePanel } from '@/components/dashboard/PageStates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -43,6 +45,7 @@ interface Afspraak {
   deelnemers: string[]
   bedrijf: string | null
   bedrijfId: number | null
+  notities?: string | null
   createdAt: string | null
 }
 
@@ -138,7 +141,7 @@ function currentTimeHHmm() {
   return now.toISOString().slice(11, 16)
 }
 
-export default function AgendaPage() {
+export default function AgendaPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('agenda_q')
   const [typeFilter, setTypeFilter] = useDashboardQueryEnum(
     'agenda_type',
@@ -148,10 +151,19 @@ export default function AgendaPage() {
   const [selectedDate, setSelectedDate] = useDashboardQueryText('agenda_date')
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedAfspraak, setSelectedAfspraak] = useState<Afspraak | null>(null)
   const [afspraken, setAfspraken] = useState<Afspraak[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !modalOpen) {
+      setModalOpen(true)
+    }
+  }, [autoOpenCreate, modalOpen])
 
   const fetchAfspraken = useCallback(async () => {
     setLoading(true)
@@ -203,6 +215,11 @@ export default function AgendaPage() {
   }, [afspraken, searchQuery, selectedDate, typeFilter])
 
   const refreshAfspraken = () => setRefreshKey((current) => current + 1)
+
+  const handleEdit = (afspraak: Afspraak) => {
+    setSelectedAfspraak(afspraak)
+    setEditModalOpen(true)
+  }
 
   const markDone = async (afspraak: Afspraak) => {
     try {
@@ -382,6 +399,15 @@ export default function AgendaPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
+                      onClick={() => handleEdit(afspraak)}
+                      title="Bewerk afspraak"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-green-500 hover:bg-green-500/10"
                       onClick={() => void markDone(afspraak)}
                       title="Markeer als afgerond"
@@ -429,6 +455,13 @@ export default function AgendaPage() {
       <AddAfspraakModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        onSuccess={refreshAfspraken}
+      />
+
+      <EditAfspraakModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        afspraak={selectedAfspraak}
         onSuccess={refreshAfspraken}
       />
     </div>

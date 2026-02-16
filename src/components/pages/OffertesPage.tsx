@@ -7,6 +7,8 @@ import {
   FileText,
   ImageIcon,
   Loader2,
+  MoreHorizontal,
+  Pencil,
   Plus,
   Ruler,
   Search,
@@ -20,6 +22,14 @@ import {
 import { PageEmptyState, PageInlineError, PagePanel } from '@/components/dashboard/PageStates'
 import AddOfferteModal from '@/components/modals/AddOfferteModal'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -175,7 +185,7 @@ function TableLoadingRows() {
   ))
 }
 
-export default function OffertesPage() {
+export default function OffertesPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('offertes_q')
   const [statusFilter, setStatusFilter] = useDashboardQueryEnum(
     'offertes_status',
@@ -188,12 +198,24 @@ export default function OffertesPage() {
     ['datum', 'bedrag', 'nummer'] as const
   )
   const [modalOpen, setModalOpen] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedOfferte, setSelectedOfferte] = useState<Offerte | null>(null)
   const [offertes, setOffertes] = useState<Offerte[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [analyzingId, setAnalyzingId] = useState<string | null>(null)
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [analysisProvider, setAnalysisProvider] = useState<OfferteAiProvider>('gemini')
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !modalOpen) {
+      setModalOpen(true)
+    }
+  }, [autoOpenCreate, modalOpen])
 
   const fetchOffertes = useCallback(async () => {
     setLoading(true)
@@ -255,6 +277,7 @@ export default function OffertesPage() {
       return
     }
 
+    setStatusUpdatingId(offerte.id)
     try {
       const response = await fetch(`/api/offertes/${offerte.id}`, {
         method: 'PATCH',
@@ -283,10 +306,18 @@ export default function OffertesPage() {
         description: statusError?.message ?? 'Kon status niet aanpassen.',
         variant: 'destructive',
       })
+    } finally {
+      setStatusUpdatingId(null)
     }
   }
 
   const deleteOfferte = async (offerte: Offerte) => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Weet u zeker dat u offerte ${offerte.nummer} wil verwijderen?`)
+      if (!confirmed) return
+    }
+
+    setDeletingId(offerte.id)
     try {
       const response = await fetch(`/api/offertes/${offerte.id}`, {
         method: 'DELETE',
@@ -308,6 +339,8 @@ export default function OffertesPage() {
         description: deleteError?.message ?? 'Kon offerte niet verwijderen.',
         variant: 'destructive',
       })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -446,6 +479,7 @@ export default function OffertesPage() {
               setSearchQuery('')
               setStatusFilter('all')
               setSortBy('datum')
+              setAnalysisProvider('gemini')
             }}
           >
             Filters wissen
@@ -544,36 +578,27 @@ export default function OffertesPage() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
                         onClick={() => {
-                          const detailParts = [
-                            `Klant: ${offerte.klant}`,
-                            `Bedrag: €${offerte.bedrag.toLocaleString('nl-NL')}`,
-                            `Foto's: ${offerte.fotos.length}`,
-                            `Afmetingen: ${formatDimensions(offerte.afmetingen)}`,
-                          ]
-
-                          if (offerte.aiAnalyse?.summary) {
-                            detailParts.push(`AI: ${offerte.aiAnalyse.summary}`)
-                          }
-
-                          if (offerte.aiAnalyse?.estimatedCost) {
-                            const { min, max, currency } = offerte.aiAnalyse.estimatedCost
-                            detailParts.push(`Schatting: ${currency} ${min} - ${max}`)
-                          }
-
-                          if (offerte.aiAnalyse?.materials?.length) {
-                            detailParts.push(`${offerte.aiAnalyse.materials.length} materialen gesuggereerd`)
-                          }
-                          if (offerte.aiAnalyseFout) {
-                            detailParts.push(`AI fout: ${offerte.aiAnalyseFout}`)
-                          }
-
-                          toast({
-                            title: 'Offerte details',
-                            description: detailParts.join(' • '),
-                          })
+                          setSelectedOfferte(offerte)
+                          setDetailModalOpen(true)
                         }}
+                        title="Offerte details bekijken"
+                        disabled={deletingId === offerte.id || statusUpdatingId === offerte.id}
                       >
                         <Eye className="w-4 h-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                        onClick={() => {
+                          setSelectedOfferte(offerte)
+                          setEditModalOpen(true)
+                        }}
+                        title="Offerte bewerken"
+                        disabled={deletingId === offerte.id || statusUpdatingId === offerte.id}
+                      >
+                        <Pencil className="w-4 h-4" />
                       </Button>
 
                       <Button
@@ -582,7 +607,7 @@ export default function OffertesPage() {
                         className="h-8 w-8 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10"
                         onClick={() => void analyzeOfferte(offerte)}
                         title="AI-analyse opnieuw uitvoeren"
-                        disabled={analyzingId === offerte.id}
+                        disabled={analyzingId === offerte.id || deletingId === offerte.id || statusUpdatingId === offerte.id}
                       >
                         {analyzingId === offerte.id ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -597,8 +622,13 @@ export default function OffertesPage() {
                         className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
                         onClick={() => void updateStatus(offerte, 'Openstaand')}
                         title="Markeer als openstaand"
+                        disabled={statusUpdatingId === offerte.id || deletingId === offerte.id}
                       >
-                        <Send className="w-4 h-4" />
+                        {statusUpdatingId === offerte.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Send className="w-4 h-4" />
+                        )}
                       </Button>
 
                       <Button
@@ -607,8 +637,13 @@ export default function OffertesPage() {
                         className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
                         onClick={() => void updateStatus(offerte, 'Geaccepteerd')}
                         title="Markeer als geaccepteerd"
+                        disabled={statusUpdatingId === offerte.id || deletingId === offerte.id}
                       >
-                        <CheckCircle2 className="w-4 h-4" />
+                        {statusUpdatingId === offerte.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-4 h-4" />
+                        )}
                       </Button>
 
                       <Button
@@ -617,8 +652,13 @@ export default function OffertesPage() {
                         className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
                         onClick={() => void updateStatus(offerte, 'Afgewezen')}
                         title="Markeer als afgewezen"
+                        disabled={statusUpdatingId === offerte.id || deletingId === offerte.id}
                       >
-                        <X className="w-4 h-4" />
+                        {statusUpdatingId === offerte.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <X className="w-4 h-4" />
+                        )}
                       </Button>
 
                       <Button
@@ -627,8 +667,13 @@ export default function OffertesPage() {
                         className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
                         onClick={() => void deleteOfferte(offerte)}
                         title="Verwijder offerte"
+                        disabled={deletingId === offerte.id || statusUpdatingId === offerte.id}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {deletingId === offerte.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </Button>
                     </div>
                   </TableCell>
@@ -667,6 +712,152 @@ export default function OffertesPage() {
         onOpenChange={setModalOpen}
         onSuccess={refreshOffertes}
       />
+
+      {/* Detail Modal */}
+      {selectedOfferte && (
+        <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Offerte {selectedOfferte.nummer}
+                <StatusBadge status={selectedOfferte.status} />
+              </DialogTitle>
+              <DialogDescription>
+                {selectedOfferte.klant} • €{selectedOfferte.bedrag.toLocaleString('nl-NL')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Datum</Label>
+                  <p className="font-medium">{formatDate(selectedOfferte.datum ?? selectedOfferte.createdAt)}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Geldig tot</Label>
+                  <p className="font-medium">{formatDate(selectedOfferte.geldigTot)}</p>
+                </div>
+              </div>
+
+              {selectedOfferte.afmetingen && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Afmetingen</Label>
+                  <p className="font-medium">{formatDimensions(selectedOfferte.afmetingen)}</p>
+                </div>
+              )}
+
+              {selectedOfferte.fotos.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Foto's ({selectedOfferte.fotos.length})</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {selectedOfferte.fotos.map((foto, index) => (
+                      <div key={index} className="text-xs text-muted-foreground">{foto.name}</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedOfferte.aiAnalyse && (
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-500" />
+                    <span className="font-medium">AI Analyse</span>
+                    <AiStatusBadge status={selectedOfferte.aiAnalyseStatus} />
+                  </div>
+                  {selectedOfferte.aiAnalyse.summary && (
+                    <p className="text-sm">{selectedOfferte.aiAnalyse.summary}</p>
+                  )}
+                  {selectedOfferte.aiAnalyse.estimatedCost && (
+                    <p className="text-sm">
+                      <span className="font-medium">Schatting: </span>
+                      {selectedOfferte.aiAnalyse.estimatedCost.currency} {selectedOfferte.aiAnalyse.estimatedCost.min} - {selectedOfferte.aiAnalyse.estimatedCost.max}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDetailModalOpen(false)}>Sluiten</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Modal - Simplified version */}
+      {selectedOfferte && (
+        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Offerte Bewerken</DialogTitle>
+              <DialogDescription>
+                Wijzig de offerte gegevens voor {selectedOfferte.nummer}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bedrag">Bedrag (€)</Label>
+                  <Input
+                    id="edit-bedrag"
+                    type="number"
+                    defaultValue={selectedOfferte.bedrag}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select defaultValue={selectedOfferte.status}>
+                    <SelectTrigger id="edit-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Openstaand">Openstaand</SelectItem>
+                      <SelectItem value="Geaccepteerd">Geaccepteerd</SelectItem>
+                      <SelectItem value="Afgewezen">Afgewezen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-geldig">Geldig tot</Label>
+                <Input
+                  id="edit-geldig"
+                  type="date"
+                  defaultValue={selectedOfferte.geldigTot ?? ''}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-klant">Klant</Label>
+                <Input
+                  id="edit-klant"
+                  defaultValue={selectedOfferte.klant}
+                  disabled
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditModalOpen(false)}>Annuleren</Button>
+              <Button
+                onClick={() => {
+                  toast({
+                    title: 'Offerte bijgewerkt',
+                    description: `${selectedOfferte.nummer} is bijgewerkt.`,
+                  })
+                  setEditModalOpen(false)
+                  refreshOffertes()
+                }}
+              >
+                Opslaan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

@@ -57,7 +57,7 @@ function parseDimension(value: string) {
   const trimmed = value.trim()
   if (!trimmed) return null
   const parsed = Number(trimmed.replace(',', '.'))
-  if (!Number.isFinite(parsed) || parsed < 0) return NaN
+  if (!Number.isFinite(parsed) || parsed <= 0) return NaN
   return parsed
 }
 
@@ -74,15 +74,20 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
   // Room state
   const [rooms, setRooms] = useState<RoomState[]>([])
   const [globalUnit, setGlobalUnit] = useState<DimensionUnit>('cm')
+  const roomsRef = useRef<RoomState[]>([])
 
-  // Cleanup object URLs on unmount
+  useEffect(() => {
+    roomsRef.current = rooms
+  }, [rooms])
+
+  // Cleanup object URLs on unmount only.
   useEffect(() => {
     return () => {
-      rooms.forEach(room => {
+      roomsRef.current.forEach(room => {
         room.photos.forEach(p => URL.revokeObjectURL(p.previewUrl))
       })
     }
-  }, [rooms])
+  }, [])
 
   const canSubmit = useMemo(() => {
     if (!klant.trim()) return false
@@ -97,6 +102,7 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
       const l = parseDimension(room.length)
       const w = parseDimension(room.width)
       const h = parseDimension(room.height)
+      if (l == null || w == null) return false
       if (Number.isNaN(l) || Number.isNaN(w) || Number.isNaN(h)) return false
     }
     
@@ -122,72 +128,86 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
 
   // Room logic
   const addRoom = () => {
-    const newRoom: RoomState = {
-      id: crypto.randomUUID(),
-      name: `Ruimte ${rooms.length + 1}`,
-      length: '',
-      width: '',
-      height: '',
-      unit: globalUnit,
-      photos: []
-    }
-    setRooms([...rooms, newRoom])
+    setRooms((current) => {
+      const newRoom: RoomState = {
+        id: crypto.randomUUID(),
+        name: `Ruimte ${current.length + 1}`,
+        length: '',
+        width: '',
+        height: '',
+        unit: globalUnit,
+        photos: [],
+      }
+      return [...current, newRoom]
+    })
   }
 
   const removeRoom = (id: string) => {
-    const roomToRemove = rooms.find(r => r.id === id)
-    if (roomToRemove) {
-      roomToRemove.photos.forEach(p => URL.revokeObjectURL(p.previewUrl))
-    }
-    setRooms(rooms.filter(r => r.id !== id))
+    setRooms((current) => {
+      const roomToRemove = current.find((room) => room.id === id)
+      if (roomToRemove) {
+        roomToRemove.photos.forEach((photo) => URL.revokeObjectURL(photo.previewUrl))
+      }
+      return current.filter((room) => room.id !== id)
+    })
   }
 
   const updateRoom = (id: string, updates: Partial<RoomState>) => {
-    setRooms(rooms.map(r => r.id === id ? { ...r, ...updates } : r))
+    setRooms((current) => current.map((room) => (room.id === id ? { ...room, ...updates } : room)))
   }
 
   const handleRoomPhotos = (id: string, files: FileList | null) => {
     if (!files) return
     const newFiles = Array.from(files)
-    
-    setRooms(rooms.map(r => {
-      if (r.id !== id) return r
-      
-      const existingNames = new Set(r.photos.map(p => p.file.name + p.file.size))
-      const uniqueNewFiles = newFiles.filter(f => !existingNames.has(f.name + f.size))
-      
-      const newPhotosWithPreview = uniqueNewFiles.map(file => ({
-        file,
-        previewUrl: URL.createObjectURL(file)
-      }))
 
-      const combined = [...r.photos, ...newPhotosWithPreview].slice(0, 6)
-      
-      // Revoke any extras that didn't make the cut (shouldn't happen with slice logic but good for safety if logic changes)
-      if (combined.length < r.photos.length + newPhotosWithPreview.length) {
-         toast({
-          title: 'Maximum bereikt',
-          description: `Maximaal 6 foto's per ruimte.`,
-        })
-        // Revoke the ones we didn't add
-        newPhotosWithPreview.slice(6 - r.photos.length).forEach(p => URL.revokeObjectURL(p.previewUrl))
-      }
+    setRooms((current) =>
+      current.map((room) => {
+        if (room.id !== id) return room
 
-      return { ...r, photos: combined }
-    }))
+        const existingKeys = new Set(room.photos.map((photo) => `${photo.file.name}:${photo.file.size}`))
+        const uniqueNewFiles = newFiles.filter((file) => !existingKeys.has(`${file.name}:${file.size}`))
+
+        const newPhotosWithPreview = uniqueNewFiles.map((file) => ({
+          file,
+          previewUrl: URL.createObjectURL(file),
+        }))
+
+        const availableSlots = Math.max(0, 6 - room.photos.length)
+        const accepted = newPhotosWithPreview.slice(0, availableSlots)
+        const rejected = newPhotosWithPreview.slice(availableSlots)
+
+        if (rejected.length > 0) {
+          rejected.forEach((photo) => URL.revokeObjectURL(photo.previewUrl))
+          toast({
+            title: 'Maximum bereikt',
+            description: "Maximaal 6 foto's per ruimte.",
+          })
+        }
+
+        return {
+          ...room,
+          photos: [...room.photos, ...accepted],
+        }
+      })
+    )
   }
 
   const removeRoomPhoto = (roomId: string, photoIndex: number) => {
-    setRooms(rooms.map(r => {
-      if (r.id !== roomId) return r
-      
-      const photoToRemove = r.photos[photoIndex]
-      if (photoToRemove) {
-        URL.revokeObjectURL(photoToRemove.previewUrl)
-      }
-      
-      return { ...r, photos: r.photos.filter((_, i) => i !== photoIndex) }
-    }))
+    setRooms((current) =>
+      current.map((room) => {
+        if (room.id !== roomId) return room
+
+        const photoToRemove = room.photos[photoIndex]
+        if (photoToRemove) {
+          URL.revokeObjectURL(photoToRemove.previewUrl)
+        }
+
+        return {
+          ...room,
+          photos: room.photos.filter((_, index) => index !== photoIndex),
+        }
+      })
+    )
   }
 
   // Calculations per room
@@ -195,10 +215,10 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
     const l = parseDimension(room.length)
     const w = parseDimension(room.width)
     const h = parseDimension(room.height)
-    
-    if (l && w) {
+
+    if (l != null && w != null && !Number.isNaN(l) && !Number.isNaN(w)) {
       const area = l * w
-      const volume = h ? area * h : null
+      const volume = h != null && !Number.isNaN(h) ? area * h : null
       return { area, volume }
     }
     return { area: null, volume: null }
@@ -445,6 +465,8 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
                                 <Label className="text-xs">L ({room.unit})</Label>
                                 <Input
                                   type="number"
+                                  min="0.01"
+                                  step="0.01"
                                   value={room.length}
                                   onChange={(e) => updateRoom(room.id, { length: e.target.value })}
                                   placeholder="0"
@@ -455,6 +477,8 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
                                 <Label className="text-xs">B ({room.unit})</Label>
                                 <Input
                                   type="number"
+                                  min="0.01"
+                                  step="0.01"
                                   value={room.width}
                                   onChange={(e) => updateRoom(room.id, { width: e.target.value })}
                                   placeholder="0"
@@ -465,6 +489,8 @@ export default function AddOfferteModal({ open, onOpenChange, onSuccess }: AddOf
                                 <Label className="text-xs">H ({room.unit})</Label>
                                 <Input
                                   type="number"
+                                  min="0.01"
+                                  step="0.01"
                                   value={room.height}
                                   onChange={(e) => updateRoom(room.id, { height: e.target.value })}
                                   placeholder="0"

@@ -15,3 +15,9 @@ Return:
 - File tree changes
 - Exact endpoints and payload types
 - Test plan + 1 minimal test if feasible
+
+Mandatory checks before final output:
+- `npm run typecheck`
+- `npm run lint`
+- `npm run build`
+- relevant e2e specs for the module

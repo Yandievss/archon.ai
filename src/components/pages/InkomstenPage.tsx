@@ -118,7 +118,7 @@ function TableLoadingRows() {
   ))
 }
 
-export default function InkomstenPage() {
+export default function InkomstenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('inkomsten_q')
   const [statusFilter, setStatusFilter] = useDashboardQueryEnum(
     'inkomsten_status',
@@ -136,6 +136,13 @@ export default function InkomstenPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !modalOpen) {
+      setModalOpen(true)
+    }
+  }, [autoOpenCreate, modalOpen])
 
   const fetchInkomsten = useCallback(async () => {
     setLoading(true)

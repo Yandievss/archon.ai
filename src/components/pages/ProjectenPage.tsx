@@ -5,6 +5,7 @@ import {
   Calendar,
   Eye,
   FolderKanban,
+  Loader2,
   Pencil,
   Plus,
   Search,
@@ -17,7 +18,16 @@ import { PageEmptyState, PageInlineError, PagePanel } from '@/components/dashboa
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Progress } from '@/components/ui/progress'
 import {
   Select,
@@ -73,7 +83,7 @@ function nextStatus(current: ProjectStatus): ProjectStatus {
   return 'Actief'
 }
 
-export default function ProjectenPage() {
+export default function ProjectenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('projecten_q')
   const [statusFilter, setStatusFilter] = useDashboardQueryEnum(
     'projecten_status',
@@ -87,10 +97,21 @@ export default function ProjectenPage() {
   )
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [statusUpdatingId, setStatusUpdatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !modalOpen) {
+      setModalOpen(true)
+    }
+  }, [autoOpenCreate, modalOpen])
 
   const fetchProjects = useCallback(async () => {
     setLoading(true)
@@ -145,6 +166,7 @@ export default function ProjectenPage() {
   const refreshProjects = () => setRefreshKey((current) => current + 1)
 
   const updateProjectStatus = async (projectId: string, status: ProjectStatus) => {
+    setStatusUpdatingId(projectId)
     try {
       const response = await fetch(`/api/projecten/${projectId}`, {
         method: 'PATCH',
@@ -160,6 +182,7 @@ export default function ProjectenPage() {
       setProjects((current) =>
         current.map((project) => (project.id === projectId ? { ...project, status } : project))
       )
+      setSelectedProject((current) => (current?.id === projectId ? { ...current, status } : current))
 
       toast({
         title: 'Project bijgewerkt',
@@ -171,10 +194,18 @@ export default function ProjectenPage() {
         description: updateError?.message ?? 'Kon project niet bijwerken.',
         variant: 'destructive',
       })
+    } finally {
+      setStatusUpdatingId(null)
     }
   }
 
-  const deleteProject = async (projectId: string) => {
+  const deleteProject = async (projectId: string, projectName: string) => {
+    if (typeof window !== 'undefined') {
+      const confirmed = window.confirm(`Weet u zeker dat u project "${projectName}" wil verwijderen?`)
+      if (!confirmed) return
+    }
+
+    setDeletingId(projectId)
     try {
       const response = await fetch(`/api/projecten/${projectId}`, { method: 'DELETE' })
       if (!response.ok) {
@@ -183,6 +214,8 @@ export default function ProjectenPage() {
       }
 
       setProjects((current) => current.filter((project) => project.id !== projectId))
+      setSelectedProject((current) => (current?.id === projectId ? null : current))
+      if (selectedProject?.id === projectId) setDetailModalOpen(false)
       toast({
         title: 'Project verwijderd',
         description: 'Het project is verwijderd.',
@@ -193,6 +226,8 @@ export default function ProjectenPage() {
         description: deleteError?.message ?? 'Kon project niet verwijderen.',
         variant: 'destructive',
       })
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -252,6 +287,18 @@ export default function ProjectenPage() {
               <SelectItem value="voortgang">Voortgang</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto"
+            onClick={() => {
+              setSearchQuery('')
+              setStatusFilter('all')
+              setSortBy('deadline')
+            }}
+          >
+            Filters wissen
+          </Button>
         </div>
       </PagePanel>
 
@@ -330,11 +377,11 @@ export default function ProjectenPage() {
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10"
                       onClick={() => {
-                        toast({
-                          title: 'Project details',
-                          description: `Details van "${project.naam}" worden getoond.`,
-                        })
+                        setSelectedProject(project)
+                        setDetailModalOpen(true)
                       }}
+                      title="Project details bekijken"
+                      disabled={deletingId === project.id}
                     >
                       <Eye className="w-4 h-4" />
                     </Button>
@@ -344,16 +391,27 @@ export default function ProjectenPage() {
                       className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
                       onClick={() => void updateProjectStatus(project.id, nextStatus(project.status))}
                       title="Status wijzigen"
+                      disabled={statusUpdatingId === project.id || deletingId === project.id}
                     >
-                      <Pencil className="w-4 h-4" />
+                      {statusUpdatingId === project.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Pencil className="w-4 h-4" />
+                      )}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                      onClick={() => void deleteProject(project.id)}
+                      onClick={() => void deleteProject(project.id, project.naam)}
+                      title="Project verwijderen"
+                      disabled={deletingId === project.id || statusUpdatingId === project.id}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      {deletingId === project.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -390,6 +448,65 @@ export default function ProjectenPage() {
         onOpenChange={setModalOpen}
         onSuccess={refreshProjects}
       />
+
+      {/* Detail Modal */}
+      {selectedProject && (
+        <Dialog open={detailModalOpen} onOpenChange={setDetailModalOpen}>
+          <DialogContent className="sm:max-w-[550px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FolderKanban className="w-5 h-5" />
+                {selectedProject.naam}
+                <StatusBadge status={selectedProject.status} />
+              </DialogTitle>
+              <DialogDescription>
+                {selectedProject.bedrijf || 'Geen bedrijf'} • Budget: €{selectedProject.budget.toLocaleString('nl-NL')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Status</Label>
+                  <p className="font-medium">{selectedProject.status}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Deadline</Label>
+                  <p className="font-medium">{formatDate(selectedProject.deadline)}</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-muted-foreground">Beschrijving</Label>
+                <p className="text-sm mt-1">{selectedProject.beschrijving || 'Geen beschrijving'}</p>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Voortgang</span>
+                  <span className="font-medium">{selectedProject.voortgang}%</span>
+                </div>
+                <Progress value={selectedProject.voortgang} className="h-2" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Budget gebruikt</Label>
+                  <p className="font-medium">€{selectedProject.budgetGebruikt.toLocaleString('nl-NL')}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Resterend budget</Label>
+                  <p className="font-medium">€{(selectedProject.budget - selectedProject.budgetGebruikt).toLocaleString('nl-NL')}</p>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDetailModalOpen(false)}>Sluiten</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

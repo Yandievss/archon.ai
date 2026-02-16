@@ -35,6 +35,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import AddCompanyModal from '@/components/modals/AddCompanyModal'
+import EditCompanyModal from '@/components/modals/EditCompanyModal'
 import { PageEmptyState, PageInlineError, PagePanel } from '@/components/dashboard/PageStates'
 import { toast } from '@/hooks/use-toast'
 import {
@@ -49,6 +50,11 @@ interface ApiCompany {
   name: string
   sector: string | null
   location: string | null
+  email: string | null
+  phone: string | null
+  website: string | null
+  description: string | null
+  vatNumber: string | null
   status: string | null
   dealValue?: number | null
   _count?: {
@@ -62,6 +68,11 @@ interface Bedrijf {
   naam: string
   sector: string
   locatie: string
+  email: string
+  telefoon: string
+  website: string
+  beschrijving: string
+  vatNumber: string
   contacten: number
   deals: number
   dealValue: number
@@ -107,7 +118,7 @@ function TableLoadingRows() {
   ))
 }
 
-export default function BedrijvenPage() {
+export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('bedrijven_q')
   const [statusFilter, setStatusFilter] = useDashboardQueryEnum(
     'bedrijven_status',
@@ -125,7 +136,16 @@ export default function BedrijvenPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [selectedCompany, setSelectedCompany] = useState<Bedrijf | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !isModalOpen) {
+      setIsModalOpen(true)
+    }
+  }, [autoOpenCreate])
 
   const itemsPerPage = 5
 
@@ -161,6 +181,11 @@ export default function BedrijvenPage() {
       naam: company.name,
       sector: company.sector?.trim() || 'Onbekend',
       locatie: company.location?.trim() || 'Onbekend',
+      email: company.email || '',
+      telefoon: company.phone || '',
+      website: company.website || '',
+      beschrijving: company.description || '',
+      vatNumber: company.vatNumber || '',
       contacten: company._count?.contacts ?? 0,
       deals: company._count?.deals ?? 0,
       dealValue: Math.round(company.dealValue ?? 0),
@@ -440,12 +465,10 @@ export default function BedrijvenPage() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                          onClick={() =>
-                            toast({
-                              title: 'Bewerken',
-                              description: `Bewerkfunctionaliteit voor ${bedrijf.naam} volgt in de volgende stap.`,
-                            })
-                          }
+                          onClick={() => {
+                            setSelectedCompany(bedrijf)
+                            setIsEditModalOpen(true)
+                          }}
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -518,6 +541,13 @@ export default function BedrijvenPage() {
       <AddCompanyModal
         open={isModalOpen}
         onOpenChange={setIsModalOpen}
+        onSuccess={() => setRefreshKey((key) => key + 1)}
+      />
+
+      <EditCompanyModal
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        company={selectedCompany}
         onSuccess={() => setRefreshKey((key) => key + 1)}
       />
     </div>

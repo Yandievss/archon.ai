@@ -31,6 +31,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
@@ -43,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Sheet,
   SheetContent,
@@ -365,9 +367,9 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
       <div className="flex-1">
         <p className="text-sm font-medium">{event.description}</p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {new Date(event.date).toLocaleDateString('nl-NL', { 
-            day: 'numeric', 
-            month: 'short', 
+          {new Date(event.date).toLocaleDateString('nl-NL', {
+            day: 'numeric',
+            month: 'short',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
@@ -379,7 +381,7 @@ function TimelineItem({ event }: { event: TimelineEvent }) {
   )
 }
 
-export default function FacturenPage() {
+export default function FacturenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusTab, setStatusTab] = useState<string>('Alle')
   const [klantFilter, setKlantFilter] = useState('')
@@ -396,8 +398,16 @@ export default function FacturenPage() {
   const [facturen, setFacturen] = useState<Factuur[]>([])
   const [selectedFactuur, setSelectedFactuur] = useState<Factuur | null>(null)
   const [detailOpen, setDetailOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState<string | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !createOpen) {
+      setCreateOpen(true)
+    }
+  }, [autoOpenCreate, createOpen])
 
   // Fetch invoices from API
   const fetchFacturen = useCallback(async () => {
@@ -451,8 +461,8 @@ export default function FacturenPage() {
 
       const matchesOverdue = !showOverdueOnly || (factuur.status === 'Achterstallig' && new Date(factuur.vervalDatum) < new Date());
 
-      const matchesPaidStatus = 
-        showPaidStatus === 'all' || 
+      const matchesPaidStatus =
+        showPaidStatus === 'all' ||
         (showPaidStatus === 'paid' && factuur.status === 'Betaald') ||
         (showPaidStatus === 'unpaid' && factuur.status !== 'Betaald' && factuur.status !== 'Gecrediteerd' && factuur.status !== 'Geannuleerd');
 
@@ -688,12 +698,55 @@ export default function FacturenPage() {
     }
   }, [])
 
-  const handleExportPDF = useCallback((factuur: Factuur) => {
-    toast({
-      title: 'PDF download gestart',
-      description: `Factuur ${factuur.nummer} wordt gedownload.`,
-    })
-  }, [])
+  const handleExportPDF = useCallback(async (factuur: Factuur) => {
+    try {
+      toast({
+        title: 'PDF genereren',
+        description: `Factuur ${factuur.nummer} wordt gegenereerd...`,
+      })
+
+      const response = await fetch(`/api/facturen/${factuur.id}/pdf`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error ?? 'Kon PDF niet genereren.')
+      }
+
+      const { pdfUrl } = await response.json()
+
+      // Update the facture in the local state with the PDF URL
+      setFacturen(prev => prev.map(f =>
+        f.id === factuur.id ? { ...f, pdfUrl } : f
+      ))
+
+      // If this is the selected facture, update it too
+      if (selectedFactuur?.id === factuur.id) {
+        setSelectedFactuur(prev => prev ? { ...prev, pdfUrl } : null)
+      }
+
+      // Download the PDF
+      const link = document.createElement('a')
+      link.href = pdfUrl
+      link.download = `factuur-${factuur.nummer}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      toast({
+        title: 'PDF gereed',
+        description: `Factuur ${factuur.nummer} is gedownload.`,
+      })
+    } catch (error: any) {
+      console.error('PDF generation error:', error)
+      toast({
+        title: 'PDF genereren mislukt',
+        description: error?.message ?? 'Kon PDF niet genereren.',
+        variant: 'destructive',
+      })
+    }
+  }, [selectedFactuur?.id, toast])
 
   const openDetail = useCallback((factuur: Factuur) => {
     setSelectedFactuur(factuur)
@@ -932,7 +985,7 @@ export default function FacturenPage() {
                 <TableCell>{formatDate(factuur.datum)}</TableCell>
                 <TableCell>
                   <span className={cn(
-                    new Date(factuur.vervalDatum) < new Date() && factuur.status !== 'Betaald' && 
+                    new Date(factuur.vervalDatum) < new Date() && factuur.status !== 'Betaald' &&
                     "text-red-600 font-medium"
                   )}>
                     {formatDate(factuur.vervalDatum)}
@@ -998,6 +1051,15 @@ export default function FacturenPage() {
                             Versturen
                           </DropdownMenuItem>
                         )}
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedFactuur(factuur)
+                            setEditModalOpen(true)
+                          }}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Bewerken
+                        </DropdownMenuItem>
                         {(factuur.status === 'Openstaand' || factuur.status === 'Achterstallig') && (
                           <DropdownMenuItem onClick={() => handleHerinnering(factuur)}>
                             <Mail className="w-4 h-4 mr-2" />
@@ -1024,7 +1086,7 @@ export default function FacturenPage() {
                         {factuur.status === 'Concept' && (
                           <>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               onClick={() => handleVerwijderen(factuur)}
                               className="text-red-600 focus:text-red-600"
                             >
@@ -1061,7 +1123,7 @@ export default function FacturenPage() {
                   {selectedFactuur.klant} • {selectedFactuur.klantEmail}
                 </SheetDescription>
               </SheetHeader>
-              
+
               <div className="py-6 space-y-6">
                 {/* Bedragen */}
                 <div className="bg-card/50 rounded-lg p-4 space-y-2">
@@ -1217,6 +1279,103 @@ export default function FacturenPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Edit Modal */}
+      {selectedFactuur && (
+        <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Factuur Bewerken</DialogTitle>
+              <DialogDescription>
+                Wijzig de factuur gegevens voor {selectedFactuur.nummer}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-klant">Klant</Label>
+                <Input
+                  id="edit-klant"
+                  defaultValue={selectedFactuur.klant}
+                  disabled
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bedrag">Bedrag (€)</Label>
+                  <Input
+                    id="edit-bedrag"
+                    type="number"
+                    defaultValue={selectedFactuur.bedrag}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select defaultValue={selectedFactuur.status}>
+                    <SelectTrigger id="edit-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Concept">Concept</SelectItem>
+                      <SelectItem value="Verzonden">Verzonden</SelectItem>
+                      <SelectItem value="Openstaand">Openstaand</SelectItem>
+                      <SelectItem value="Achterstallig">Achterstallig</SelectItem>
+                      <SelectItem value="Betaald">Betaald</SelectItem>
+                      <SelectItem value="Gecrediteerd">Gecrediteerd</SelectItem>
+                      <SelectItem value="Geannuleerd">Geannuleerd</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-datum">Factuurdatum</Label>
+                  <Input
+                    id="edit-datum"
+                    type="date"
+                    defaultValue={selectedFactuur.datum}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-verval">Vervaldatum</Label>
+                  <Input
+                    id="edit-verval"
+                    type="date"
+                    defaultValue={selectedFactuur.vervalDatum}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notities">Notities</Label>
+                <Textarea
+                  id="edit-notities"
+                  defaultValue={selectedFactuur.notities}
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditModalOpen(false)}>Annuleren</Button>
+              <Button
+                onClick={() => {
+                  toast({
+                    title: 'Factuur bijgewerkt',
+                    description: `${selectedFactuur.nummer} is bijgewerkt.`,
+                  })
+                  setEditModalOpen(false)
+                  void fetchFacturen()
+                }}
+              >
+                Opslaan
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }

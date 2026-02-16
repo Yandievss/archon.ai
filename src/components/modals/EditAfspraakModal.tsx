@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Loader2 } from 'lucide-react'
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -10,51 +10,79 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { toast } from '@/hooks/use-toast'
 
-interface AddAfspraakModalProps {
+interface Afspraak {
+  id: string
+  titel: string
+  beschrijving: string | null
+  startTijd: string | null
+  eindTijd: string | null
+  locatie: string | null
+  deelnemers: string[]
+  bedrijf: string | null
+  bedrijfId: number | null
+}
+
+interface EditAfspraakModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  afspraak: Afspraak | null
   onSuccess?: () => void
 }
 
-function getTodayIso() {
-  return new Date().toISOString().slice(0, 10)
+function toDateInputValue(isoString: string | null): string {
+  if (!isoString) return ''
+  try {
+    const date = new Date(isoString)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(0, 10)
+  } catch {
+    return ''
+  }
 }
 
-function getDefaultStart() {
-  const now = new Date()
-  now.setMinutes(0, 0, 0)
-  now.setHours(now.getHours() + 1)
-  return now.toISOString().slice(11, 16)
+function toTimeInputValue(isoString: string | null): string {
+  if (!isoString) return ''
+  try {
+    const date = new Date(isoString)
+    if (Number.isNaN(date.getTime())) return ''
+    return date.toISOString().slice(11, 16)
+  } catch {
+    return ''
+  }
 }
 
-function getDefaultEnd() {
-  const now = new Date()
-  now.setMinutes(0, 0, 0)
-  now.setHours(now.getHours() + 2)
-  return now.toISOString().slice(11, 16)
-}
-
-export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddAfspraakModalProps) {
+export default function EditAfspraakModal({ open, onOpenChange, afspraak, onSuccess }: EditAfspraakModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [titel, setTitel] = useState('')
   const [beschrijving, setBeschrijving] = useState('')
-  const [notities, setNotities] = useState('')
-  const [datum, setDatum] = useState(getTodayIso)
-  const [startTijd, setStartTijd] = useState(getDefaultStart)
-  const [eindTijd, setEindTijd] = useState(getDefaultEnd)
+  const [datum, setDatum] = useState('')
+  const [startTijd, setStartTijd] = useState('')
+  const [eindTijd, setEindTijd] = useState('')
   const [locatie, setLocatie] = useState('')
   const [bedrijf, setBedrijf] = useState('')
   const [deelnemers, setDeelnemers] = useState('')
 
   const canSubmit = useMemo(() => Boolean(titel.trim() && datum && startTijd), [datum, startTijd, titel])
 
+  useEffect(() => {
+    if (afspraak && open) {
+      setTitel(afspraak.titel)
+      setBeschrijving(afspraak.beschrijving || '')
+      setDatum(toDateInputValue(afspraak.startTijd))
+      setStartTijd(toTimeInputValue(afspraak.startTijd))
+      setEindTijd(toTimeInputValue(afspraak.eindTijd))
+      setLocatie(afspraak.locatie || '')
+      setBedrijf(afspraak.bedrijf || '')
+      setDeelnemers(afspraak.deelnemers.join(', '))
+    }
+  }, [afspraak, open])
+
   const resetForm = () => {
     setTitel('')
     setBeschrijving('')
-    setNotities('')
-    setDatum(getTodayIso)
-    setStartTijd(getDefaultStart)
-    setEindTijd(getDefaultEnd)
+    setDatum('')
+    setStartTijd('')
+    setEindTijd('')
     setLocatie('')
     setBedrijf('')
     setDeelnemers('')
@@ -72,6 +100,15 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
       return
     }
 
+    if (!afspraak) {
+      toast({
+        title: 'Fout',
+        description: 'Geen afspraak geselecteerd.',
+        variant: 'destructive',
+      })
+      return
+    }
+
     const deelnemersList = deelnemers
       .split(',')
       .map((item) => item.trim())
@@ -80,15 +117,14 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/afspraken', {
-        method: 'POST',
+      const response = await fetch(`/api/afspraken/${afspraak.id}`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           titel: titel.trim(),
           beschrijving: beschrijving.trim() || null,
-          notities: notities.trim() || null,
           datum,
-          startTijd,
+          startTijd: startTijd,
           eindTijd: eindTijd || null,
           locatie: locatie.trim() || null,
           bedrijf: bedrijf.trim() || null,
@@ -99,12 +135,12 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         const validationDetail = body?.details?.[0]?.message
-        throw new Error(validationDetail || body?.error || 'Kon afspraak niet opslaan.')
+        throw new Error(validationDetail || body?.error || 'Kon afspraak niet bijwerken.')
       }
 
       toast({
-        title: 'Afspraak aangemaakt',
-        description: 'De afspraak is succesvol toegevoegd.',
+        title: 'Afspraak bijgewerkt',
+        description: 'De afspraak is succesvol bijgewerkt.',
       })
 
       resetForm()
@@ -112,8 +148,8 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
       onSuccess?.()
     } catch (error: any) {
       toast({
-        title: 'Aanmaken mislukt',
-        description: error?.message ?? 'Kon afspraak niet opslaan.',
+        title: 'Bijwerken mislukt',
+        description: error?.message ?? 'Kon afspraak niet bijwerken.',
         variant: 'destructive',
       })
     } finally {
@@ -131,17 +167,17 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
     >
       <DialogContent className="sm:max-w-[620px]">
         <DialogHeader>
-          <DialogTitle>Nieuwe Afspraak</DialogTitle>
+          <DialogTitle>Afspraak Bewerken</DialogTitle>
           <DialogDescription>
-            Plan een afspraak met datum, tijd en deelnemers.
+            Wijzig de details van de afspraak.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="afspraak-titel">Titel *</Label>
+            <Label htmlFor="edit-afspraak-titel">Titel *</Label>
             <Input
-              id="afspraak-titel"
+              id="edit-afspraak-titel"
               placeholder="Bijv. Project Kick-off"
               value={titel}
               onChange={(e) => setTitel(e.target.value)}
@@ -152,9 +188,9 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="afspraak-beschrijving">Beschrijving</Label>
+            <Label htmlFor="edit-afspraak-beschrijving">Beschrijving</Label>
             <Textarea
-              id="afspraak-beschrijving"
+              id="edit-afspraak-beschrijving"
               placeholder="Optionele toelichting"
               value={beschrijving}
               onChange={(e) => setBeschrijving(e.target.value)}
@@ -162,22 +198,11 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="afspraak-notities">Notities</Label>
-            <Textarea
-              id="afspraak-notities"
-              placeholder="Interne notities of aantekeningen"
-              value={notities}
-              onChange={(e) => setNotities(e.target.value)}
-              className="min-h-[90px]"
-            />
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="afspraak-datum">Datum *</Label>
+              <Label htmlFor="edit-afspraak-datum">Datum *</Label>
               <Input
-                id="afspraak-datum"
+                id="edit-afspraak-datum"
                 type="date"
                 value={datum}
                 onChange={(e) => setDatum(e.target.value)}
@@ -186,9 +211,9 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="afspraak-start">Start *</Label>
+              <Label htmlFor="edit-afspraak-start">Start *</Label>
               <Input
-                id="afspraak-start"
+                id="edit-afspraak-start"
                 type="time"
                 value={startTijd}
                 onChange={(e) => setStartTijd(e.target.value)}
@@ -197,9 +222,9 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="afspraak-eind">Einde</Label>
+              <Label htmlFor="edit-afspraak-eind">Einde</Label>
               <Input
-                id="afspraak-eind"
+                id="edit-afspraak-eind"
                 type="time"
                 value={eindTijd}
                 onChange={(e) => setEindTijd(e.target.value)}
@@ -209,18 +234,18 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="afspraak-locatie">Locatie</Label>
+              <Label htmlFor="edit-afspraak-locatie">Locatie</Label>
               <Input
-                id="afspraak-locatie"
+                id="edit-afspraak-locatie"
                 placeholder="Bijv. Online / Kantoor"
                 value={locatie}
                 onChange={(e) => setLocatie(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="afspraak-bedrijf">Bedrijf</Label>
+              <Label htmlFor="edit-afspraak-bedrijf">Bedrijf</Label>
               <Input
-                id="afspraak-bedrijf"
+                id="edit-afspraak-bedrijf"
                 placeholder="Bijv. ACME BV"
                 value={bedrijf}
                 onChange={(e) => setBedrijf(e.target.value)}
@@ -229,9 +254,9 @@ export default function AddAfspraakModal({ open, onOpenChange, onSuccess }: AddA
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="afspraak-deelnemers">Deelnemers (komma gescheiden)</Label>
+            <Label htmlFor="edit-afspraak-deelnemers">Deelnemers (komma gescheiden)</Label>
             <Input
-              id="afspraak-deelnemers"
+              id="edit-afspraak-deelnemers"
               placeholder="Jan de Vries, Maria Jansen"
               value={deelnemers}
               onChange={(e) => setDeelnemers(e.target.value)}

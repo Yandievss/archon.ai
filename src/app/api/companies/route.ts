@@ -12,6 +12,7 @@ const CompanySchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   description: z.string().optional(),
+  vatNumber: z.string().optional(),
   status: z.enum(['Actief', 'Inactief', 'Nieuw']).default('Actief'),
 })
 
@@ -41,7 +42,7 @@ async function listSupabaseCompanies(params: {
   const { status, sector, search } = params
   const supabase = getSupabaseAdmin() as any
 
-  const bedrijvenResult = await supabase.from('bedrijven').select('id, naam, stad, email, created_at')
+  const bedrijvenResult = await supabase.from('bedrijven').select('id, naam, stad, email, created_at, btw')
 
   if (bedrijvenResult.error) throw bedrijvenResult.error
 
@@ -57,6 +58,7 @@ async function listSupabaseCompanies(params: {
         sector: 'Onbekend',
         location: bedrijf.stad ?? null,
         email: bedrijf.email ?? null,
+        vatNumber: bedrijf.btw ?? null,
         status: computedStatus,
         dealValue: 0,
         _count: {
@@ -173,6 +175,7 @@ export async function POST(request: Request) {
             email: validatedData.email || null,
             telefoon: validatedData.phone || null,
             adres: validatedData.description || null,
+            btw: validatedData.vatNumber || null,
           },
         ])
         .select('id, naam, stad, email, created_at')

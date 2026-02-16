@@ -1,9 +1,19 @@
 'use client'
 
 import { memo, useState } from 'react'
-import { MessageCircle, Users, Hash, TrendingUp, Clock, Pin, Plus } from 'lucide-react'
+import { MessageCircle, Users, Hash, TrendingUp, Clock, Pin, Plus, X } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { toast } from '@/hooks/use-toast'
 
@@ -113,9 +123,75 @@ const statusConfig = {
 function StaticThreads() {
   const [activeTab, setActiveTab] = useState<'threads' | 'streams'>('threads')
   const [selectedThread, setSelectedThread] = useState<string | null>(null)
+  const [threads, setThreads] = useState<Thread[]>(mockThreads)
+  const [streams, setStreams] = useState<Stream[]>(mockStreams)
 
-  // This component is intentionally static - no entrance animations
-  // It will remain visible and static during page navigation
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [title, setTitle] = useState('')
+  const [message, setMessage] = useState('')
+  const [category, setCategory] = useState<Thread['category']>('general')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleOpenModal = () => {
+    setTitle('')
+    setMessage('')
+    setCategory('general')
+    setIsModalOpen(true)
+  }
+
+  const handleSubmit = async () => {
+    if (!title.trim() || !message.trim()) {
+      toast({
+        title: 'Validatie fout',
+        description: 'Vul een titel en bericht in.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    setIsSubmitting(true)
+
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    if (activeTab === 'threads') {
+      const newThread: Thread = {
+        id: Date.now().toString(),
+        title: title.trim(),
+        message: message.trim(),
+        author: 'Jij',
+        timestamp: 'nu',
+        replies: 0,
+        category,
+        isActive: true,
+      }
+      setThreads(prev => [newThread, ...prev])
+      toast({
+        title: 'Discussie aangemaakt',
+        description: `Discussie "${title}" is succesvol aangemaakt.`,
+      })
+    } else {
+      const newStream: Stream = {
+        id: Date.now().toString(),
+        name: title.trim(),
+        status: 'online',
+        participants: 1,
+        lastActivity: 'nu',
+        topic: message.trim(),
+      }
+      setStreams(prev => [newStream, ...prev])
+      toast({
+        title: 'Kanaal aangemaakt',
+        description: `Kanaal "${title}" is succesvol aangemaakt.`,
+      })
+    }
+
+    setIsSubmitting(false)
+    setIsModalOpen(false)
+    setTitle('')
+    setMessage('')
+  }
 
   return (
     <div className="w-full max-w-md space-y-4">
@@ -176,9 +252,9 @@ function StaticThreads() {
                 {mockThreads.filter(t => t.isActive).length} Actief
               </Badge>
             </div>
-            
+
             <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-              {mockThreads.map((thread) => {
+              {threads.map((thread) => {
                 const CategoryIcon = categoryConfig[thread.category].icon
                 return (
                   <button
@@ -242,9 +318,9 @@ function StaticThreads() {
                 {mockStreams.filter(s => s.status === 'online').length} Online
               </Badge>
             </div>
-            
+
             <div className="space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
-              {mockStreams.map((stream) => (
+              {streams.map((stream) => (
                 <button
                   key={stream.id}
                   type="button"
@@ -281,25 +357,86 @@ function StaticThreads() {
             </div>
           </div>
         )}
-        
+
         {/* Action Button */}
         <div className="mt-4 pt-3 border-t border-border/30">
           <Button
             variant="outline"
             size="sm"
             className="w-full bg-card/40 border-border/30 hover:bg-card/60 text-foreground"
-            onClick={() => {
-              toast({
-                title: activeTab === 'threads' ? 'Nieuwe Discussie' : 'Nieuw Kanaal',
-                description: `${activeTab === 'threads' ? 'Discussie' : 'Kanaal'} aanmaken functionaliteit wordt geïmplementeerd.`,
-              })
-            }}
+            onClick={handleOpenModal}
           >
             <Plus className="w-4 h-4 mr-2" />
             {activeTab === 'threads' ? 'Nieuwe discussie' : 'Nieuw kanaal'}
           </Button>
         </div>
       </div>
+
+      {/* Create Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {activeTab === 'threads' ? 'Nieuwe Discussie' : 'Nieuw Kanaal'}
+            </DialogTitle>
+            <DialogDescription>
+              {activeTab === 'threads'
+                ? 'Start een nieuwe discussie met het team.'
+                : 'Maak een nieuw kanaal aan voor gesprekken.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                {activeTab === 'threads' ? 'Titel' : 'Kanaal naam'}
+              </label>
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={activeTab === 'threads' ? 'Bijv. Project Update' : 'Bijv. Marketing Team'}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                {activeTab === 'threads' ? 'Bericht' : 'Onderwerp'}
+              </label>
+              <Textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder={
+                  activeTab === 'threads'
+                    ? 'Beschrijf waar je over wilt discussiëren...'
+                    : 'Waar gaat dit kanaal over?'
+                }
+                rows={4}
+              />
+            </div>
+            {activeTab === 'threads' && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Categorie</label>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value as Thread['category'])}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                >
+                  <option value="general">Algemeen</option>
+                  <option value="project">Project</option>
+                  <option value="support">Support</option>
+                  <option value="announcement">Aankondiging</option>
+                </select>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+              Annuleren
+            </Button>
+            <Button onClick={handleSubmit} disabled={isSubmitting || !title.trim() || !message.trim()}>
+              {isSubmitting ? 'Aanmaken...' : 'Aanmaken'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

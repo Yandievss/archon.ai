@@ -23,19 +23,27 @@ export function useDashboardQueryEnum<const T extends string>(
   allowedValues: readonly T[]
 ): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState<T>(defaultValue)
+  const allowedSignature = allowedValues.join('|')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+    const allowedSet = new Set(allowedSignature.split('|'))
 
-    const raw = new URLSearchParams(window.location.search).get(key)
-    if (!raw) return
+    const syncFromUrl = () => {
+      const raw = new URLSearchParams(window.location.search).get(key)
+      if (!raw) {
+        setValue((current) => (current === defaultValue ? current : defaultValue))
+        return
+      }
 
-    const nextValue = allowedValues.includes(raw as T) ? (raw as T) : defaultValue
-    if (nextValue === value) return
+      const nextValue = allowedSet.has(raw) ? (raw as T) : defaultValue
+      setValue((current) => (current === nextValue ? current : nextValue))
+    }
 
-    const id = requestAnimationFrame(() => setValue(nextValue))
-    return () => cancelAnimationFrame(id)
-  }, [allowedValues, defaultValue, key, value])
+    syncFromUrl()
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
+  }, [allowedSignature, defaultValue, key])
 
   useEffect(() => {
     if (value === defaultValue) {
@@ -57,13 +65,16 @@ export function useDashboardQueryText(
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const raw = new URLSearchParams(window.location.search).get(key)
-    if (raw == null) return
-    if (raw === value) return
+    const syncFromUrl = () => {
+      const raw = new URLSearchParams(window.location.search).get(key)
+      const nextValue = raw ?? defaultValue
+      setValue((current) => (current === nextValue ? current : nextValue))
+    }
 
-    const id = requestAnimationFrame(() => setValue(raw))
-    return () => cancelAnimationFrame(id)
-  }, [key, value])
+    syncFromUrl()
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
+  }, [defaultValue, key])
 
   useEffect(() => {
     if (value === defaultValue) {
@@ -88,18 +99,24 @@ export function useDashboardQueryNumber(
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    const raw = new URLSearchParams(window.location.search).get(key)
-    if (raw == null) return
+    const syncFromUrl = () => {
+      const raw = new URLSearchParams(window.location.search).get(key)
+      if (raw == null) {
+        setValue((current) => (current === defaultValue ? current : defaultValue))
+        return
+      }
 
-    const parsed = Number.parseInt(raw, 10)
-    if (!Number.isFinite(parsed)) return
+      const parsed = Number.parseInt(raw, 10)
+      if (!Number.isFinite(parsed)) return
 
-    const clamped = Math.max(min, Math.min(max, parsed))
-    if (clamped === value) return
+      const clamped = Math.max(min, Math.min(max, parsed))
+      setValue((current) => (current === clamped ? current : clamped))
+    }
 
-    const id = requestAnimationFrame(() => setValue(clamped))
-    return () => cancelAnimationFrame(id)
-  }, [key, max, min, value])
+    syncFromUrl()
+    window.addEventListener('popstate', syncFromUrl)
+    return () => window.removeEventListener('popstate', syncFromUrl)
+  }, [defaultValue, key, max, min])
 
   useEffect(() => {
     if (value === defaultValue) {

@@ -11,6 +11,7 @@ Checklist:
 - Empty state with CTA
 - Hover/focus states
 - Responsive breakpoints
+- No layout jump when switching pages
 - No visual changes that break functionality
 Return:
 - Before/after bullet list

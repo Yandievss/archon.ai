@@ -1,4 +1,20 @@
 {
     "workbench.experimental.cloudChanges.partialMatches.enabled": true,
-    "typescript.disableAutomaticTypeAcquisition": true
+    "typescript.disableAutomaticTypeAcquisition": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": "explicit"
+    },
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+        "typescript",
+        "typescriptreact"
+    ],
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "editor.rulers": [
+        100
+    ],
+    "kiroAgent.configureMCP": "Disabled"
 }

@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 
 import AddDealModal from '@/components/modals/AddDealModal'
+import EditDealModal from '@/components/modals/EditDealModal'
 import { PageEmptyState, PageInlineError, PagePanel } from '@/components/dashboard/PageStates'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -48,6 +49,7 @@ interface Deal {
   stadium: DealStage
   kans: number
   deadline: string | null
+  notities?: string | null
   createdAt: string | null
 }
 
@@ -108,10 +110,12 @@ function DealCard({
   deal,
   onUpdateStage,
   onDelete,
+  onEdit,
 }: {
   deal: Deal
   onUpdateStage: (dealId: string, stage: DealStage) => Promise<void>
   onDelete: (dealId: string) => Promise<void>
+  onEdit: (deal: Deal) => void
 }) {
   return (
     <div className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-xl p-4 hover:bg-card/75 hover:shadow-lg hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-200">
@@ -124,6 +128,11 @@ function DealCard({
             <Building2 className="w-3.5 h-3.5" />
             <span className="text-sm">{deal.bedrijf ?? '-'}</span>
           </div>
+          {deal.notities && (
+            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-2 max-h-16 overflow-y-auto">
+              {deal.notities}
+            </div>
+          )}
         </div>
 
         <DropdownMenu>
@@ -147,6 +156,9 @@ function DealCard({
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onEdit(deal)}>
+              Bewerken
+            </DropdownMenuItem>
             <DropdownMenuItem className="text-red-600" onClick={() => void onDelete(deal.id)}>
               Verwijderen
             </DropdownMenuItem>
@@ -176,7 +188,7 @@ function DealCard({
   )
 }
 
-export default function DealsPage() {
+export default function DealsPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('deals_q')
   const [stageFilter, setStageFilter] = useDashboardQueryEnum(
     'deals_stadium',
@@ -190,10 +202,19 @@ export default function DealsPage() {
   )
 
   const [modalOpen, setModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedDeal, setSelectedDeal] = useState<Deal | null>(null)
   const [deals, setDeals] = useState<Deal[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+
+  // Auto-open create modal when prop is true
+  useEffect(() => {
+    if (autoOpenCreate && !modalOpen) {
+      setModalOpen(true)
+    }
+  }, [autoOpenCreate, modalOpen])
 
   const fetchDeals = useCallback(async () => {
     setLoading(true)
@@ -459,6 +480,10 @@ export default function DealsPage() {
                       deal={deal}
                       onUpdateStage={updateDealStage}
                       onDelete={deleteDeal}
+                      onEdit={(dealToEdit) => {
+                        setSelectedDeal(dealToEdit)
+                        setEditModalOpen(true)
+                      }}
                     />
                   ))}
                 </div>
@@ -493,6 +518,13 @@ export default function DealsPage() {
       <AddDealModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        onSuccess={refreshDeals}
+      />
+
+      <EditDealModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        deal={selectedDeal}
         onSuccess={refreshDeals}
       />
     </div>

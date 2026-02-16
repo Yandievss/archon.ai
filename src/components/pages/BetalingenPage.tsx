@@ -74,14 +74,14 @@ function DaysLeftBadge({ dagenOver }: { dagenOver: number }) {
 }
 
 // Stat Card Component
-function StatCard({ 
-  title, 
-  value, 
-  icon: Icon, 
-  color, 
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
   gradient,
   alert = false
-}: { 
+}: {
   title: string
   value: number
   icon: React.ElementType
@@ -119,16 +119,16 @@ function StatCard({
 }
 
 // Payment Card Component
-function PaymentCard({ 
-  item, 
-  type 
-}: { 
+function PaymentCard({
+  item,
+  type
+}: {
   item: typeof teOntvangenBetalingen[0] | typeof teBetalenBetalingen[0]
   type: 'in' | 'out'
 }) {
   const isTeOntvangen = type === 'in'
   const bedrijf = isTeOntvangen ? (item as typeof teOntvangenBetalingen[0]).bedrijf : (item as typeof teBetalenBetalingen[0]).leverancier
-  
+
   return (
     <div className="group h-full bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 transition-[background-color,box-shadow,border-color] duration-300">
       <div className="flex items-start justify-between mb-4">
@@ -157,7 +157,7 @@ function PaymentCard({
           </p>
         </div>
       </div>
-      
+
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Calendar className="w-4 h-4" />
@@ -169,9 +169,9 @@ function PaymentCard({
       <div className="flex items-center justify-between pt-4 border-t border-border/30">
         <StatusBadge status={item.status} />
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="h-8 text-xs bg-card/60 hover:bg-card/75 border-border/30"
             onClick={() =>
               toast({
@@ -183,11 +183,11 @@ function PaymentCard({
             <Eye className="w-3.5 h-3.5 mr-1" />
             Details
           </Button>
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             className={cn(
               "h-8 text-xs text-white shadow-lg transition-all duration-200",
-              isTeOntvangen 
+              isTeOntvangen
                 ? "bg-linear-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 shadow-emerald-500/25"
                 : "bg-linear-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 shadow-red-500/25"
             )}
@@ -207,7 +207,7 @@ function PaymentCard({
   )
 }
 
-export default function BetalingenPage() {
+export default function BetalingenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [activeTab, setActiveTab] = useDashboardQueryEnum(
     'betalingen_tab',
     'te-ontvangen',
@@ -294,7 +294,7 @@ export default function BetalingenPage() {
             <option value="vervallen">Vervallen</option>
             <option value="betaald">Betaald</option>
           </select>
-          
+
           {/* Periode Filter */}
           <select
             value={periodeFilter}
@@ -366,8 +366,8 @@ export default function BetalingenPage() {
           className="w-full"
         >
           <TabsList className="bg-card/60 backdrop-blur-xl border border-border/30 p-1 mb-6">
-            <TabsTrigger 
-              value="te-ontvangen" 
+            <TabsTrigger
+              value="te-ontvangen"
               className="data-[state=active]:bg-emerald-500 data-[state=active]:text-white"
             >
               <ArrowDownRight className="w-4 h-4 mr-2" />
@@ -376,7 +376,7 @@ export default function BetalingenPage() {
                 {filteredTeOntvangenBetalingen.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="te-betalen"
               className="data-[state=active]:bg-red-500 data-[state=active]:text-white"
             >

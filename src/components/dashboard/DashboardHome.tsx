@@ -37,6 +37,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import {
+  Tooltip as UITooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { toast } from '@/hooks/use-toast'
 import useDashboardData from '@/hooks/use-dashboard-data'
 import { cn } from '@/lib/utils'
@@ -230,10 +236,12 @@ function CustomTooltip({
 export default function DashboardHome({
   formattedDate,
   onNavigate,
+  onNavigateWithCreate,
   onPrefetch,
 }: {
   formattedDate: string
   onNavigate: (page: string) => void
+  onNavigateWithCreate?: (page: string) => void
   onPrefetch: (page?: string) => void
 }) {
   const reduceMotion = useReducedMotion()
@@ -414,20 +422,24 @@ export default function DashboardHome({
               <h3 className="text-lg font-semibold text-foreground">Deals Status</h3>
               <p className="text-sm text-muted-foreground">Totaal: 100 deals</p>
             </div>
-            <Button
-              aria-label="Meer opties"
-              variant="ghost"
-              size="icon"
-              className="hover:bg-card/60"
-              onClick={() =>
-                toast({
-                  title: 'Meer opties',
-                  description: 'Dit menu is nog niet gekoppeld in deze demo.',
-                })
-              }
-            >
-              <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-            </Button>
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    aria-label="Meer opties"
+                    variant="ghost"
+                    size="icon"
+                    className="hover:bg-card/60"
+                    disabled
+                  >
+                    <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Binnenkort</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center justify-center py-4">
             <ResponsiveContainer width="100%" height={180}>
@@ -473,12 +485,7 @@ export default function DashboardHome({
               variant="ghost"
               size="sm"
               className="text-muted-foreground hover:text-foreground"
-              onClick={() =>
-                toast({
-                  title: 'Recente Activiteit',
-                  description: 'Overzicht is nog niet gekoppeld in deze demo.',
-                })
-              }
+              onClick={() => onNavigate('deals')}
             >
               Bekijk alles
               <ChevronRight className="w-4 h-4 ml-1" />
@@ -508,20 +515,24 @@ export default function DashboardHome({
               <h3 className="text-lg font-semibold text-foreground">Taken</h3>
               <p className="text-sm text-muted-foreground">Nog te voltooien</p>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-muted-foreground hover:text-foreground"
-              onClick={() =>
-                toast({
-                  title: 'Taken',
-                  description: 'Takenoverzicht is nog niet gekoppeld in deze demo.',
-                })
-              }
-            >
-              Alle taken
-              <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
+            <TooltipProvider>
+              <UITooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground"
+                    disabled
+                  >
+                    Alle taken
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Binnenkort</p>
+                </TooltipContent>
+              </UITooltip>
+            </TooltipProvider>
           </div>
           <div className="space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
             {tasks.map((task) => (
@@ -563,11 +574,13 @@ export default function DashboardHome({
               onMouseEnter={() => onPrefetch(action.page)}
               onFocus={() => onPrefetch(action.page)}
               onClick={() => {
-                onNavigate(action.page)
-                toast({
-                  title: action.label,
-                  description: 'Aanmaken is nog niet gekoppeld in deze demo.',
-                })
+                if (action.page === 'ai-assistant') {
+                  onNavigate(action.page)
+                } else if (onNavigateWithCreate) {
+                  onNavigateWithCreate(action.page)
+                } else {
+                  onNavigate(action.page)
+                }
               }}
               className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/30 hover:border-border/50 hover:shadow-lg transition-all duration-200 group bg-card/40 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
             >

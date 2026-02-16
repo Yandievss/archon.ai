@@ -22,6 +22,7 @@ const UpdateDealSchema = z.object({
   stadium: z.enum(dealStageValues).optional(),
   kans: z.coerce.number().int().min(0).max(100).optional(),
   deadline: z.string().nullable().optional(),
+  notities: z.string().trim().nullable().optional(),
 })
 
 type RouteContext = {
@@ -35,6 +36,7 @@ function buildUpdatePayload(variant: DealsSchemaVariant, data: {
   kans?: number
   deadline?: string | null
   bedrijfId?: number | null
+  notities?: string | null
 }) {
   const payload: Record<string, unknown> = {}
 
@@ -45,6 +47,7 @@ function buildUpdatePayload(variant: DealsSchemaVariant, data: {
     if (data.kans !== undefined) payload.kans = data.kans
     if (data.deadline !== undefined) payload.deadline = data.deadline
     if (data.bedrijfId !== undefined) payload.bedrijf_id = data.bedrijfId
+    if (data.notities !== undefined) payload.notities = data.notities
     return payload
   }
 

@@ -38,10 +38,10 @@ export async function detectDealsSchemaVariant(supabase: any): Promise<DealsSche
 
 export function selectColumnsForVariant(variant: DealsSchemaVariant) {
   if (variant === 'dutch') {
-    return 'id, titel, waarde, stadium, deadline, kans, bedrijf_id, created_at'
+    return 'id, titel, waarde, stadium, deadline, kans, bedrijf_id, notities, created_at'
   }
 
-  return 'id, title, amount, stage, probability, company_id, created_at'
+  return 'id, title, amount, stage, probability, company_id, notes, created_at'
 }
 
 export function normalizeDealRow(row: any) {
@@ -52,6 +52,7 @@ export function normalizeDealRow(row: any) {
   const amountRaw = row.waarde ?? row.amount
   const stageRaw = row.stadium ?? row.stage
   const probabilityRaw = row.kans ?? row.probability
+  const notesRaw = row.notities ?? row.notes
 
   return {
     id: String(row.id),
@@ -62,6 +63,7 @@ export function normalizeDealRow(row: any) {
     stadium: (stageRaw ?? 'Lead') as DealStage,
     kans: Number(probabilityRaw ?? 0),
     deadline: row.deadline ? String(row.deadline).slice(0, 10) : null,
+    notities: notesRaw ? String(notesRaw) : null,
     createdAt: row.created_at ? String(row.created_at) : null,
   }
 }

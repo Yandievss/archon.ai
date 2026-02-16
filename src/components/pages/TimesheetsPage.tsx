@@ -72,7 +72,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
   return null
 }
 
-export default function TimesheetsPage() {
+export default function TimesheetsPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [weekIndex, setWeekIndex] = useDashboardQueryNumber('timesheets_week', 0, {
     min: 0,
     max: weeks.length - 1,

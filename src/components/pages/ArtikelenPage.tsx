@@ -56,7 +56,7 @@ const categorieKleuren: Record<string, string> = {
   "Producten": "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
 }
 
-export default function ArtikelenPage() {
+export default function ArtikelenPage({ autoOpenCreate }: { autoOpenCreate?: boolean }) {
   const [searchQuery, setSearchQuery] = useDashboardQueryText('artikelen_q')
 
   const handleNieuwArtikel = () =>

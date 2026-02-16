@@ -11,6 +11,9 @@ Method:
 3) If hooks are used, enforce "use client" and move logic to a Client Component.
 4) If a provider is required (e.g., NavigationProvider), wrap it in the root layout or the route segment layout.
 5) Re-run build mentally by verifying imports and render tree.
+6) Validate with:
+   - npm run typecheck
+   - npm run build
 Output:
 - Root cause
 - Minimal patch (file paths + diffs)

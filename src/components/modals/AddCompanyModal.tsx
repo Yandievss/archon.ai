@@ -25,6 +25,7 @@ const companyFormSchema = z.object({
   sector: z.string().optional(),
   location: z.string().optional(),
   email: z.string().email('Geldig email adres vereist').optional().or(z.literal('')),
+  vatNumber: z.string().optional(),
   phone: z.string().optional(),
   website: z.string().url('Geldig URL vereist').optional().or(z.literal('')),
   description: z.string().optional(),
@@ -52,6 +53,7 @@ export default function AddCompanyModal({
       sector: '',
       location: '',
       email: '',
+      vatNumber: '',
       phone: '',
       website: '',
       description: '',
@@ -66,6 +68,7 @@ export default function AddCompanyModal({
         sector: values.sector || undefined,
         location: values.location || undefined,
         email: values.email || undefined,
+        vatNumber: values.vatNumber || undefined,
         phone: values.phone || undefined,
         website: values.website || undefined,
         description: values.description || undefined,
@@ -191,19 +194,35 @@ export default function AddCompanyModal({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="website"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Website</FormLabel>
-                  <FormControl>
-                    <Input type="url" placeholder="https://www.bedrijf.nl" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="website"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Website</FormLabel>
+                    <FormControl>
+                      <Input type="url" placeholder="https://www.bedrijf.nl" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="vatNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>BTW Nummer</FormLabel>
+                    <FormControl>
+                      <Input placeholder="NL123456789B01" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <FormField
               control={form.control}

@@ -3,6 +3,14 @@
 ## Mission
 Build and maintain a production-grade dashboard where every visible action is functional, predictable, and testable.
 
+## Communication
+- Default language: Dutch (switch only if user asks).
+- Keep responses concise and practical.
+- Always report:
+  - what was changed,
+  - what was validated,
+  - what is still pending/blocked.
+
 ## Project Context
 - Stack: Next.js 16, React 19, TypeScript, Tailwind 4, Prisma, Supabase, Playwright.
 - Main app entry: `src/app/page.tsx`.
@@ -26,6 +34,7 @@ Build and maintain a production-grade dashboard where every visible action is fu
 3. Implement wiring end-to-end (UI -> handler -> API/data -> feedback).
 4. Add loading, success, and error states for async actions.
 5. Run quality checks before finishing.
+6. Summarize per file what changed and why.
 
 ## Quality Gates (Required)
 Run these before finalizing:
@@ -33,6 +42,12 @@ Run these before finalizing:
 - `npm run lint`
 - `npm run build`
 - relevant Playwright tests (at minimum the impacted spec files)
+
+## Change Safety
+- Prefer minimal, reversible patches.
+- Do not refactor unrelated modules in the same change.
+- Do not claim checks passed unless they were actually executed.
+- If a check cannot run, clearly state why and what remains unverified.
 
 ## API and Data Rules
 - Validate all API input.
@@ -57,5 +72,7 @@ A task is done only if:
 - `npm run typecheck`
 - `npm run lint`
 - `npm run build`
+- `npm run qa:dashboard`
+- `npm run qa:dashboard:local` (use when dev server on `:3000` is already running)
 - `npm run e2e -- e2e/dashboard.e2e.spec.ts --project=chromium --workers=1`
 - `npm run e2e -- e2e/buttons-all-pages.spec.ts --project=chromium --workers=1`

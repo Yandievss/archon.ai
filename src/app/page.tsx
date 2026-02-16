@@ -151,6 +151,7 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [desktopSidebarOpen, setDesktopSidebarOpen] = useState(true)
   const [activePage, setActivePage] = useState<string>('home')
+  const [autoOpenCreatePage, setAutoOpenCreatePage] = useState<string | null>(null)
   const [commandOpen, setCommandOpen] = useState(false)
   const [themeMounted, setThemeMounted] = useState(false)
   const [pagePreloading, setPagePreloading] = useState(false)
@@ -173,6 +174,7 @@ export default function Dashboard() {
 
     setSidebarOpen(false)
     setCommandOpen(false)
+    setAutoOpenCreatePage(null)
 
     const token = ++navTokenRef.current
     setPagePreloading(true)
@@ -189,6 +191,11 @@ export default function Dashboard() {
       startPageTransition(() => setActivePage(nextPage))
       setPagePreloading(false)
     })()
+  }
+
+  const navigateToWithCreate = (page: string) => {
+    setAutoOpenCreatePage(page)
+    navigateTo(page)
   }
 
   const handleLogout = () => {
@@ -349,29 +356,30 @@ export default function Dashboard() {
   }, [])
 
   const renderPageContent = () => {
+    const autoOpenCreate = activePage === autoOpenCreatePage
     switch (activePage) {
       case 'bedrijven':
-        return <BedrijvenPage />
+        return <BedrijvenPage autoOpenCreate={autoOpenCreate} />
       case 'contacten':
-        return <ContactenPage />
+        return <ContactenPage autoOpenCreate={autoOpenCreate} />
       case 'deals':
-        return <DealsPage />
+        return <DealsPage autoOpenCreate={autoOpenCreate} />
       case 'offertes':
-        return <OffertesPage />
+        return <OffertesPage autoOpenCreate={autoOpenCreate} />
       case 'projecten':
-        return <ProjectenPage />
+        return <ProjectenPage autoOpenCreate={autoOpenCreate} />
       case 'agenda':
-        return <AgendaPage />
+        return <AgendaPage autoOpenCreate={autoOpenCreate} />
       case 'inkomsten':
-        return <InkomstenPage />
+        return <InkomstenPage autoOpenCreate={autoOpenCreate} />
       case 'uitgaven':
-        return <UitgavenPage />
+        return <UitgavenPage autoOpenCreate={autoOpenCreate} />
       case 'artikelen':
-        return <ArtikelenPage />
+        return <ArtikelenPage autoOpenCreate={autoOpenCreate} />
       case 'timesheets':
-        return <TimesheetsPage />
+        return <TimesheetsPage autoOpenCreate={autoOpenCreate} />
       case 'betalingen':
-        return <BetalingenPage />
+        return <BetalingenPage autoOpenCreate={autoOpenCreate} />
       case 'ai-assistant':
         return <AIAssistantPage />
       case 'abonnement':
@@ -379,12 +387,13 @@ export default function Dashboard() {
       case 'instellingen':
         return <InstellingenPage />
       case 'facturen':
-        return <FacturenPage />
+        return <FacturenPage autoOpenCreate={autoOpenCreate} />
       default:
         return (
           <DashboardHome
             formattedDate={formattedDate}
             onNavigate={navigateTo}
+            onNavigateWithCreate={navigateToWithCreate}
             onPrefetch={prefetchPage}
           />
         )

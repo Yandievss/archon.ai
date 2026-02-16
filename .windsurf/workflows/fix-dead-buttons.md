@@ -18,3 +18,9 @@ Steps:
    - add TODO with a tracking issue id.
 5) Add loading state and error handling for every mutation.
 6) Return a checklist of all buttons and their status (implemented/disabled).
+7) Respect existing dashboard navigation contract in `src/app/page.tsx` (`?page=` sync + localStorage persistence).
+8) Run and report:
+   - npm run typecheck
+   - npm run lint
+   - npm run build
+   - relevant Playwright spec(s)

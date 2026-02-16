@@ -16,6 +16,7 @@ const CompanyUpdateSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
   description: z.string().optional(),
+  vatNumber: z.string().optional(),
   status: z.enum(['Actief', 'Inactief', 'Nieuw']).optional(),
 })
 
@@ -67,7 +68,7 @@ export async function GET(_request: Request, context: RouteContext) {
       const supabase = getSupabaseAdmin() as any
       const companyResult = await supabase
         .from('bedrijven')
-        .select('id, naam, stad, email, telefoon, created_at')
+        .select('id, naam, stad, email, telefoon, created_at, btw')
         .eq('id', companyId)
         .maybeSingle()
 
@@ -83,6 +84,7 @@ export async function GET(_request: Request, context: RouteContext) {
         location: company.stad,
         email: company.email,
         phone: company.telefoon,
+        vatNumber: company.btw,
         status: 'Actief',
         contacts: [],
         deals: [],
@@ -126,6 +128,7 @@ export async function PUT(request: Request, context: RouteContext) {
       if (validatedData.email !== undefined) updatePayload.email = validatedData.email || null
       if (validatedData.phone !== undefined) updatePayload.telefoon = validatedData.phone || null
       if (validatedData.description !== undefined) updatePayload.adres = validatedData.description || null
+      if (validatedData.vatNumber !== undefined) updatePayload.btw = validatedData.vatNumber || null
 
       const { data, error } = await supabase
         .from('bedrijven')
@@ -157,6 +160,8 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Failed to update company' }, { status: 500 })
   }
 }
+
+export { PUT as PATCH }
 
 export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params

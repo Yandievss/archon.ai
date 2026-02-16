@@ -25,7 +25,8 @@ function normalizeContactRow(row: any) {
     functie: row.functie ? String(row.functie) : null,
     bedrijf: bedrijfLink?.naam ? String(bedrijfLink.naam) : null,
     bedrijfId: row.bedrijf_id == null ? null : Number(row.bedrijf_id),
-    createdAt: row.created_at ? String(row.created_at) : null,
+    created_at: row.created_at ? String(row.created_at) : null,
+    updated_at: row.updated_at ? String(row.updated_at) : (row.created_at ? String(row.created_at) : null),
   }
 }
 
@@ -77,7 +78,7 @@ export async function GET() {
   try {
     const result = await (supabase as any)
       .from('contacten')
-      .select('id, voornaam, achternaam, email, telefoon, functie, bedrijf_id, created_at, bedrijven:bedrijf_id ( id, naam )')
+      .select('id, voornaam, achternaam, email, telefoon, functie, bedrijf_id, created_at, updated_at, bedrijven:bedrijf_id ( id, naam )')
       .order('created_at', { ascending: false })
       .limit(500)
 
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
           bedrijf_id: bedrijfId,
         },
       ])
-      .select('id, voornaam, achternaam, email, telefoon, functie, bedrijf_id, created_at, bedrijven:bedrijf_id ( id, naam )')
+      .select('id, voornaam, achternaam, email, telefoon, functie, bedrijf_id, created_at, updated_at, bedrijven:bedrijf_id ( id, naam )')
       .single()
 
     if (result.error) throw result.error

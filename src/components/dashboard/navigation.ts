@@ -25,11 +25,12 @@ export type NavigationItem = {
 }
 
 export const navigationItems: NavigationItem[] = [
-  { icon: Home, label: 'Ga van start', page: 'home' },
+  { icon: Home, label: 'Dashboard', page: 'home' },
   { icon: Building2, label: 'Bedrijven', page: 'bedrijven' },
   { icon: Users, label: 'Contacten', page: 'contacten' },
   { icon: Briefcase, label: 'Deals', page: 'deals' },
   { icon: FileSpreadsheet, label: 'Offertes', page: 'offertes' },
+  { icon: Receipt, label: 'Facturen', page: 'facturen' },
   { icon: FolderKanban, label: 'Projecten', page: 'projecten' },
   { icon: CalendarDays, label: 'Agenda', page: 'agenda' },
   { icon: TrendingUp, label: 'Inkomsten', page: 'inkomsten' },

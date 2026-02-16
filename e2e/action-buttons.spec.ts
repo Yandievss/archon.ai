@@ -1,82 +1,46 @@
-import { test, expect } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
+
+async function gotoPage(page: Page, pageId: string, heading: string) {
+  await page.goto(`/?page=${pageId}`)
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+  await expect(page.getByRole('heading', { level: 1, name: new RegExp(`^${heading}$`, 'i') })).toBeVisible({
+    timeout: 10_000,
+  })
+}
 
 test.describe('Action Buttons - Create New Records', () => {
+  const cases: Array<{
+    pageId: string
+    heading: string
+    action: string
+    expectDialogTitle: string
+  }> = [
+    { pageId: 'offertes', heading: 'Offertes', action: 'Nieuwe Offerte', expectDialogTitle: 'Nieuwe Offerte' },
+    { pageId: 'projecten', heading: 'Projecten', action: 'Nieuw Project', expectDialogTitle: 'Nieuw Project' },
+    { pageId: 'agenda', heading: 'Agenda', action: 'Nieuwe Afspraak', expectDialogTitle: 'Nieuwe Afspraak' },
+    { pageId: 'inkomsten', heading: 'Inkomsten', action: 'Nieuwe Factuur', expectDialogTitle: 'Nieuwe Factuur' },
+    { pageId: 'uitgaven', heading: 'Uitgaven', action: 'Nieuwe Uitgave', expectDialogTitle: 'Nieuwe Uitgave' },
+  ]
+
   test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'chromium', 'Alleen relevant op desktop viewport')
     await page.goto('/')
     await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
   })
 
-  test('Offerte page - Nieuwe Offerte button is clickable', async ({ page }) => {
-    // Navigate to Offertes page
-    const sidebarBtn = page.locator('#desktop-sidebar').getByRole('button', { name: 'Offertes', exact: true })
-    await sidebarBtn.click()
-    await page.waitForLoadState('networkidle')
+  for (const c of cases) {
+    test(`${c.heading} page - ${c.action} button opens dialog`, async ({ page }) => {
+      await gotoPage(page, c.pageId, c.heading)
 
-    // Find "Nieuwe Offerte" button
-    const newBtn = page.getByRole('button', { name: /Nieuwe Offerte/i })
-    await expect(newBtn).toBeVisible()
-    await expect(newBtn).toBeEnabled()
-    
-    // Click it
-    await newBtn.click()
-    const toastRoot = page.locator('[toast-close]').locator('..').first()
-    await expect(toastRoot).toContainText('Nieuwe Offerte')
-  })
+      // Some pages have multiple buttons with the same label; any primary action is acceptable.
+      const newButton = page.getByRole('button', { name: new RegExp(`^${c.action}$`, 'i') }).first()
+      await expect(newButton).toBeVisible()
+      await expect(newButton).toBeEnabled()
 
-  test('Projecten page - Nieuw Project button is clickable', async ({ page }) => {
-    const sidebarBtn = page.locator('#desktop-sidebar').getByRole('button', { name: 'Projecten', exact: true })
-    await sidebarBtn.click()
-    await page.waitForLoadState('networkidle')
+      await newButton.focus()
+      await page.keyboard.press('Enter')
 
-    const newBtn = page.getByRole('button', { name: /Nieuw Project/i })
-    await expect(newBtn).toBeVisible()
-    await expect(newBtn).toBeEnabled()
-    
-    await newBtn.click()
-    const toastRoot = page.locator('[toast-close]').locator('..').first()
-    await expect(toastRoot).toContainText('Nieuw Project')
-  })
-
-  test('Agenda page - Nieuwe Afspraak button is clickable', async ({ page }) => {
-    const sidebarBtn = page.locator('#desktop-sidebar').getByRole('button', { name: 'Agenda', exact: true })
-    await sidebarBtn.click()
-    await page.waitForLoadState('networkidle')
-
-    const newBtn = page.getByRole('button', { name: /Nieuwe Afspraak/i })
-    await expect(newBtn).toBeVisible()
-    await expect(newBtn).toBeEnabled()
-    
-    await newBtn.click()
-    const toastRoot = page.locator('[toast-close]').locator('..').first()
-    await expect(toastRoot).toContainText('Nieuwe Afspraak')
-  })
-
-  test('Inkomsten page - Nieuwe Inkomst button is clickable', async ({ page }) => {
-    const sidebarBtn = page.locator('#desktop-sidebar').getByRole('button', { name: 'Inkomsten', exact: true })
-    await sidebarBtn.click()
-    await page.waitForLoadState('networkidle')
-
-    const newBtn = page.getByRole('button', { name: /Nieuwe Inkomst/i })
-    await expect(newBtn).toBeVisible()
-    await expect(newBtn).toBeEnabled()
-    
-    await newBtn.click()
-    const toastRoot = page.locator('[toast-close]').locator('..').first()
-    await expect(toastRoot).toContainText('Nieuwe Inkomst')
-  })
-
-  test('Uitgaven page - Nieuwe Uitgave button is clickable', async ({ page }) => {
-    const sidebarBtn = page.locator('#desktop-sidebar').getByRole('button', { name: 'Uitgaven', exact: true })
-    await sidebarBtn.click()
-    await page.waitForLoadState('networkidle')
-
-    const newBtn = page.getByRole('button', { name: /Nieuwe Uitgave/i })
-    await expect(newBtn).toBeVisible()
-    await expect(newBtn).toBeEnabled()
-    
-    await newBtn.click()
-    const toastRoot = page.locator('[toast-close]').locator('..').first()
-    await expect(toastRoot).toContainText('Nieuwe Uitgave')
-  })
+      await expect(page.getByRole('dialog')).toContainText(c.expectDialogTitle)
+    })
+  }
 })

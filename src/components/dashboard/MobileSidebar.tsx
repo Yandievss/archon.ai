@@ -2,9 +2,16 @@
 
 import { Sparkles, X } from 'lucide-react'
 
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { bottomNavItems, navigationItems } from '@/components/dashboard/navigation'
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
 
 export default function MobileSidebar({
   open,
@@ -35,7 +42,7 @@ export default function MobileSidebar({
 
         <div className="p-4 border-b border-sidebar-border flex justify-between items-center">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500 flex items-center justify-center shadow-lg shadow-blue-500/25">
               <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -69,7 +76,6 @@ export default function MobileSidebar({
                 onClick={() => onNavigate(item.page || 'home')}
                 aria-current={activePage === item.page ? 'page' : undefined}
                 className={cn(
-                  // Keep sizing stable when switching pages: always render a border (transparent when inactive).
                   'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                   activePage === item.page
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border'
@@ -109,7 +115,6 @@ export default function MobileSidebar({
               onClick={() => (item.page ? onNavigate(item.page) : onLogout())}
               aria-current={item.page && activePage === item.page ? 'page' : undefined}
               className={cn(
-                // Keep sizing stable when switching pages: always render a border (transparent when inactive).
                 'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                 item.page && activePage === item.page
                   ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border'

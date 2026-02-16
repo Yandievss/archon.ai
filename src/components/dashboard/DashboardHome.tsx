@@ -38,6 +38,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { toast } from '@/hooks/use-toast'
+import useDashboardData from '@/hooks/use-dashboard-data'
 import { cn } from '@/lib/utils'
 
 interface StatItem {
@@ -51,6 +52,7 @@ interface StatItem {
 }
 
 interface ActivityItem {
+  id?: string
   time: string
   action: string
   user: string
@@ -63,11 +65,12 @@ interface Task {
   priority: 'high' | 'medium' | 'low'
 }
 
-const stats: StatItem[] = [
-  { title: 'Afspraken vandaag', value: 8, change: '+12%', trend: 'up', icon: Calendar, color: '#3b82f6', gradient: 'from-blue-500/20 to-blue-600/10' },
-  { title: 'Achterstallige facturen', value: 3, change: '-5%', trend: 'down', icon: FileText, color: '#f59e0b', gradient: 'from-amber-500/20 to-amber-600/10' },
-  { title: 'Deals in follow-up', value: 12, change: '+8%', trend: 'up', icon: TrendingUp, color: '#22c55e', gradient: 'from-emerald-500/20 to-emerald-600/10' },
-  { title: 'Taken met deadline', value: 5, change: '-2%', trend: 'down', icon: Clock, color: '#38bdf8', gradient: 'from-sky-500/20 to-sky-600/10' },
+// default fallback stat items (used while data is loading)
+const defaultStats: StatItem[] = [
+  { title: 'Afspraken vandaag', value: 0, change: '+0%', trend: 'up', icon: Calendar, color: '#3b82f6', gradient: 'from-blue-500/20 to-blue-600/10' },
+  { title: 'Achterstallige facturen', value: 0, change: '+0%', trend: 'up', icon: FileText, color: '#f59e0b', gradient: 'from-amber-500/20 to-amber-600/10' },
+  { title: 'Deals in follow-up', value: 0, change: '+0%', trend: 'up', icon: TrendingUp, color: '#22c55e', gradient: 'from-emerald-500/20 to-emerald-600/10' },
+  { title: 'Taken met deadline', value: 0, change: '+0%', trend: 'up', icon: Clock, color: '#38bdf8', gradient: 'from-sky-500/20 to-sky-600/10' },
 ]
 
 const revenueData = [
@@ -234,6 +237,21 @@ export default function DashboardHome({
   onPrefetch: (page?: string) => void
 }) {
   const reduceMotion = useReducedMotion()
+  const { loading, stats: ds, revenueData: rd, dealsData: dd, activities: acts } = useDashboardData()
+
+  // Map fetched stats into the UI items, falling back to defaults while loading
+  const stats: StatItem[] = defaultStats.map((s) => {
+    if (!ds) return s
+    if (s.title === 'Afspraken vandaag') return { ...s, value: ds.appointmentsToday ?? s.value }
+    if (s.title === 'Achterstallige facturen') return { ...s, value: ds.overdueOffertes ?? s.value }
+    if (s.title === 'Deals in follow-up') return { ...s, value: ds.dealsInFollowUp ?? s.value }
+    if (s.title === 'Taken met deadline') return { ...s, value: ds.tasksDue ?? s.value }
+    return s
+  })
+
+  const revenueChartData = (rd && rd.length ? rd : revenueData)
+  const dealsChartData = (dd && dd.length ? dd : dealsData)
+  const recentActivities: ActivityItem[] = (acts && acts.length ? acts : activities)
 
   return (
     <div className="space-y-6">
@@ -246,7 +264,7 @@ export default function DashboardHome({
         />
 
         {/* Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-[length:250px_250px]" />
+        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.03)_50%,transparent_75%)] bg-size-[250px_250px]" />
 
         <div className="relative flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="space-y-2">
@@ -362,7 +380,7 @@ export default function DashboardHome({
           </div>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={revenueData}>
+              <LineChart data={revenueChartData}>
                 <XAxis
                   dataKey="day"
                   axisLine={false}
@@ -415,7 +433,7 @@ export default function DashboardHome({
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
-                  data={dealsData}
+                  data={dealsChartData}
                   cx="50%"
                   cy="50%"
                   innerRadius={50}
@@ -423,7 +441,7 @@ export default function DashboardHome({
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {dealsData.map((entry, index) => (
+                  {dealsChartData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -431,7 +449,7 @@ export default function DashboardHome({
             </ResponsiveContainer>
           </div>
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {dealsData.map((deal) => (
+            {dealsChartData.map((deal) => (
               <div key={deal.name} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: deal.color }} />
                 <span className="text-sm text-muted-foreground">{deal.name}</span>
@@ -467,9 +485,9 @@ export default function DashboardHome({
             </Button>
           </div>
           <div className="space-y-4 max-h-80 overflow-y-auto custom-scrollbar">
-            {activities.map((activity) => (
+            {recentActivities.map((activity) => (
               <div
-                key={activity.time}
+                key={activity.id ?? activity.time}
                 className="flex items-start gap-4 p-3 rounded-xl hover:bg-card/60 transition-colors duration-200"
               >
                 <ActivityIcon type={activity.type} />

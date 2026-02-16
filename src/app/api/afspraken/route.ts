@@ -1,75 +1,153 @@
-import { createClient } from '@supabase/supabase-js'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+import {
+  mapCompanyNamesById,
+  resolveCompanyId,
+} from '@/app/api/finance/finance-utils'
+import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
 
-export async function POST(request: NextRequest) {
+import {
+  combineDateAndTime,
+  normalizeAfspraakRow,
+  normalizeDeelnemers,
+} from './afspraak-utils'
+
+const CreateAfspraakSchema = z.object({
+  titel: z.string().trim().min(1, 'Titel is verplicht'),
+  beschrijving: z.string().trim().optional(),
+  datum: z.string().min(1),
+  startTijd: z.string().min(1),
+  eindTijd: z.string().optional(),
+  locatie: z.string().trim().optional(),
+  deelnemers: z.array(z.string()).optional(),
+  bedrijf: z.string().trim().optional(),
+  bedrijfId: z.coerce.number().int().positive().nullable().optional(),
+})
+
+const afspraakSelect = 'id, titel, beschrijving, start_tijd, eind_tijd, locatie, deelnemers, bedrijf_id, created_at'
+
+export async function GET() {
+  let supabase: ReturnType<typeof getSupabaseAdmin>
+
+  try {
+    supabase = getSupabaseAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: 'Supabase admin client is niet geconfigureerd.' },
+      { status: 503 }
+    )
+  }
+
+  try {
+    const result = await (supabase as any)
+      .from('afspraken')
+      .select(afspraakSelect)
+      .order('start_tijd', { ascending: true })
+      .limit(500)
+
+    if (result.error) throw result.error
+
+    const rows = (result.data ?? []) as any[]
+    const companyMap = await mapCompanyNamesById(
+      supabase as any,
+      rows.map((row) => row.bedrijf_id as number | null | undefined)
+    )
+
+    return NextResponse.json(
+      rows.map((row) => normalizeAfspraakRow({
+        ...row,
+        companyName: companyMap.get(Number(row.bedrijf_id)) ?? null,
+      }))
+    )
+  } catch (error) {
+    console.error('Error fetching afspraken:', error)
+    return NextResponse.json({ error: 'Kon afspraken niet laden.' }, { status: 500 })
+  }
+}
+
+export async function POST(request: Request) {
+  let supabase: ReturnType<typeof getSupabaseAdmin>
+
+  try {
+    supabase = getSupabaseAdmin()
+  } catch {
+    return NextResponse.json(
+      { error: 'Supabase admin client is niet geconfigureerd.' },
+      { status: 503 }
+    )
+  }
+
   try {
     const body = await request.json()
-    const { datum, tijd, onderwerp, contactpersoon, locatie } = body
 
-    if (!datum || !tijd || !onderwerp) {
+    const validated = CreateAfspraakSchema.parse({
+      titel: body?.titel ?? body?.onderwerp,
+      beschrijving: body?.beschrijving,
+      datum: body?.datum,
+      startTijd: body?.startTijd ?? body?.tijd,
+      eindTijd: body?.eindTijd,
+      locatie: body?.locatie,
+      deelnemers: normalizeDeelnemers(body?.deelnemers),
+      bedrijf: body?.bedrijf,
+      bedrijfId: body?.bedrijfId ?? body?.bedrijf_id,
+    })
+
+    const startTimestamp = combineDateAndTime(validated.datum, validated.startTijd)
+    if (!startTimestamp) {
+      return NextResponse.json({ error: 'Ongeldige startdatum of starttijd.' }, { status: 400 })
+    }
+
+    const endTimestamp = validated.eindTijd
+      ? combineDateAndTime(validated.datum, validated.eindTijd)
+      : null
+
+    if (validated.eindTijd && !endTimestamp) {
+      return NextResponse.json({ error: 'Ongeldige eindtijd.' }, { status: 400 })
+    }
+
+    const bedrijfId = await resolveCompanyId({
+      supabase: supabase as any,
+      companyName: validated.bedrijf,
+      requestedCompanyId: validated.bedrijfId,
+    })
+
+    const insertResult = await (supabase as any)
+      .from('afspraken')
+      .insert([
+        {
+          titel: validated.titel,
+          beschrijving: validated.beschrijving || null,
+          start_tijd: startTimestamp,
+          eind_tijd: endTimestamp,
+          locatie: validated.locatie || null,
+          deelnemers: validated.deelnemers ?? [],
+          bedrijf_id: bedrijfId,
+        },
+      ])
+      .select(afspraakSelect)
+      .single()
+
+    if (insertResult.error) throw insertResult.error
+
+    const companyMap = await mapCompanyNamesById(supabase as any, [(insertResult.data as any).bedrijf_id])
+
+    return NextResponse.json(
+      normalizeAfspraakRow({
+        ...insertResult.data,
+        companyName: companyMap.get(Number((insertResult.data as any).bedrijf_id)) ?? null,
+      }),
+      { status: 201 }
+    )
+  } catch (error) {
+    if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Validatiefout', details: error.issues },
         { status: 400 }
       )
     }
 
-    const { data, error } = await supabase
-      .from('afspraken')
-      .insert([
-        {
-          datum,
-          tijd,
-          onderwerp,
-          contactpersoon,
-          locatie,
-        },
-      ])
-      .select()
-
-    if (error) {
-      console.error('Supabase error:', error)
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ data }, { status: 201 })
-  } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to create afspraak' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function GET() {
-  try {
-    const { data, error } = await supabase
-      .from('afspraken')
-      .select('*')
-      .order('datum', { ascending: true })
-      .limit(10)
-
-    if (error) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({ data })
-  } catch (error) {
-    console.error('API error:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch afspraken' },
-      { status: 500 }
-    )
+    console.error('Error creating afspraak:', error)
+    return NextResponse.json({ error: 'Kon afspraak niet aanmaken.' }, { status: 500 })
   }
 }

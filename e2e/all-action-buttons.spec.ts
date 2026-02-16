@@ -27,18 +27,44 @@ test.describe('All Action Buttons', () => {
       primaryAction: 'Nieuw Contact',
       expectDialogTitle: 'Nieuw Contact Aanmaken',
     },
-    { pageId: 'deals', heading: 'Deals', primaryAction: 'Nieuwe Deal' },
+    {
+      pageId: 'deals',
+      heading: 'Deals',
+      primaryAction: 'Nieuwe Deal',
+      expectDialogTitle: 'Nieuwe Deal',
+    },
     { pageId: 'timesheets', heading: 'Timesheets', primaryAction: 'Nieuwe Entry' },
     { pageId: 'artikelen', heading: 'Artikelen', primaryAction: 'Nieuw Artikel' },
-    { pageId: 'offertes', heading: 'Offertes', primaryAction: 'Nieuwe Offerte' },
-    { pageId: 'projecten', heading: 'Projecten', primaryAction: 'Nieuw Project' },
-    { pageId: 'agenda', heading: 'Agenda', primaryAction: 'Nieuwe Afspraak' },
+    {
+      pageId: 'offertes',
+      heading: 'Offertes',
+      primaryAction: 'Nieuwe Offerte',
+      expectDialogTitle: 'Nieuwe Offerte',
+    },
+    {
+      pageId: 'projecten',
+      heading: 'Projecten',
+      primaryAction: 'Nieuw Project',
+      expectDialogTitle: 'Nieuw Project',
+    },
+    {
+      pageId: 'agenda',
+      heading: 'Agenda',
+      primaryAction: 'Nieuwe Afspraak',
+      expectDialogTitle: 'Nieuwe Afspraak',
+    },
     {
       pageId: 'inkomsten',
       heading: 'Inkomsten',
       primaryAction: 'Nieuwe Factuur',
+      expectDialogTitle: 'Nieuwe Factuur',
     },
-    { pageId: 'uitgaven', heading: 'Uitgaven', primaryAction: 'Nieuwe Uitgave' },
+    {
+      pageId: 'uitgaven',
+      heading: 'Uitgaven',
+      primaryAction: 'Nieuwe Uitgave',
+      expectDialogTitle: 'Nieuwe Uitgave',
+    },
   ]
 
   for (const c of CASES) {

@@ -80,7 +80,6 @@ export default function DesktopSidebar({
                 onClick={() => onNavigate(item.page || 'home')}
                 aria-current={activePage === item.page ? 'page' : undefined}
                 className={cn(
-                  // Keep sizing stable when switching pages: always render a border (transparent when inactive).
                   'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,box-shadow,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                   activePage === item.page
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground shadow-lg border-sidebar-border'
@@ -121,7 +120,6 @@ export default function DesktopSidebar({
                 onClick={() => (item.page ? onNavigate(item.page) : onLogout())}
                 aria-current={item.page && activePage === item.page ? 'page' : undefined}
                 className={cn(
-                  // Keep sizing stable when switching pages: always render a border (transparent when inactive).
                   'relative w-full min-h-11 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border border-transparent transition-[background-color,color,box-shadow,border-color] duration-200 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring/50',
                   item.page && activePage === item.page
                     ? 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-border'

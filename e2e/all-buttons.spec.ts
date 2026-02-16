@@ -9,7 +9,7 @@ test('sidebar buttons do not jump when switching pages', async ({ page }, testIn
   const sidebar = page.locator('#desktop-sidebar')
   await expect(sidebar).toBeVisible()
 
-  const labels = ['Ga van start', 'Bedrijven', 'Contacten', 'Deals', 'Offertes', 'Projecten', 'Agenda'] as const
+  const labels = ['Dashboard', 'Bedrijven', 'Contacten', 'Deals', 'Offertes', 'Projecten', 'Agenda'] as const
 
   const readBoxes = async () => {
     const boxes: Record<(typeof labels)[number], { x: number; y: number; width: number; height: number }> = {} as never
@@ -51,4 +51,3 @@ test('sidebar buttons do not jump when switching pages', async ({ page }, testIn
   const afterDeals = await readBoxes()
   assertStable(afterBedrijven, afterDeals, 'After navigating to Deals')
 })
-

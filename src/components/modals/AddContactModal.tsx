@@ -1,14 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Plus, Mail, Phone, Building2, Briefcase, Tag } from 'lucide-react'
+import { Building2, Briefcase, Mail, Phone, Plus, Tag, X } from 'lucide-react'
+
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Badge } from '@/components/ui/badge'
 import { toast } from '@/hooks/use-toast'
-import { createRecord } from '@/hooks/use-supabase'
 
 interface AddContactModalProps {
   open: boolean
@@ -29,33 +29,28 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>([])
 
-  // Handle form input changes
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const handleInputChange = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  // Add tag
   const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()])
-      setTagInput('')
-    }
+    const trimmedTag = tagInput.trim()
+    if (!trimmedTag || tags.includes(trimmedTag)) return
+
+    setTags((current) => [...current, trimmedTag])
+    setTagInput('')
   }
 
-  // Remove tag
   const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove))
+    setTags((current) => current.filter((tag) => tag !== tagToRemove))
   }
 
-  // Handle tag input key press
-  const handleTagKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleAddTag()
-    }
+  const handleTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    handleAddTag()
   }
 
-  // Reset form
   const resetForm = () => {
     setFormData({
       voornaam: '',
@@ -65,15 +60,13 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
       bedrijf: '',
       functie: '',
     })
-    setTags([])
     setTagInput('')
+    setTags([])
   }
 
-  // Handle submit
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    
-    // Validation
+
     if (!formData.voornaam.trim() || !formData.achternaam.trim()) {
       toast({
         title: 'Validatiefout',
@@ -86,29 +79,35 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
     setLoading(true)
 
     try {
-      // Prepare contact data
-      const contactData = {
-        voornaam: formData.voornaam.trim(),
-        achternaam: formData.achternaam.trim(),
-        email: formData.email.trim() || null,
-        telefoon: formData.telefoon.trim() || null,
-        bedrijf: formData.bedrijf.trim() || null,
-        functie: formData.functie.trim() || null,
+      const response = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          voornaam: formData.voornaam.trim(),
+          achternaam: formData.achternaam.trim(),
+          email: formData.email.trim() || null,
+          telefoon: formData.telefoon.trim() || null,
+          bedrijf: formData.bedrijf.trim() || null,
+          functie: formData.functie.trim() || null,
+          tags,
+        }),
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        const validationDetail = body?.details?.[0]?.message
+        throw new Error(validationDetail || body?.error || 'Kon contact niet opslaan.')
       }
 
-      // Create contact
-      const result = await createRecord('contacten', contactData, 'Contact succesvol aangemaakt')
-
-      if (result.success) {
-        resetForm()
-        onOpenChange(false)
-        onSuccess?.()
-      }
-    } catch (error) {
-      console.error('Error creating contact:', error)
+      resetForm()
+      onOpenChange(false)
+      onSuccess?.()
+    } catch (error: any) {
       toast({
         title: 'Fout',
-        description: 'Er is een fout opgetreden bij het aanmaken van het contact.',
+        description: error?.message ?? 'Er is een fout opgetreden bij het aanmaken van het contact.',
         variant: 'destructive',
       })
     } finally {
@@ -117,11 +116,17 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        onOpenChange(nextOpen)
+        if (!nextOpen) resetForm()
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+            <div className="p-2 rounded-xl bg-linear-to-br from-emerald-500/20 to-teal-500/20">
               <Plus className="w-5 h-5 text-emerald-600" />
             </div>
             Nieuw Contact Aanmaken
@@ -132,13 +137,12 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6 mt-4">
-          {/* Naam Sectie */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b">
               <Briefcase className="w-4 h-4 text-emerald-600" />
               <h3 className="font-semibold text-foreground">Persoonsgegevens</h3>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="voornaam">Voornaam *</Label>
@@ -151,7 +155,7 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
                   className="bg-background/30 border-border/30 focus-visible:ring-emerald-500/20"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="achternaam">Achternaam *</Label>
                 <Input
@@ -166,13 +170,12 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
             </div>
           </div>
 
-          {/* Bedrijfsgegevens Sectie */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b">
               <Building2 className="w-4 h-4 text-emerald-600" />
               <h3 className="font-semibold text-foreground">Bedrijfsgegevens</h3>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="bedrijf">Bedrijf</Label>
@@ -184,7 +187,7 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
                   className="bg-background/30 border-border/30 focus-visible:ring-emerald-500/20"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="functie">Functie</Label>
                 <Input
@@ -198,13 +201,12 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
             </div>
           </div>
 
-          {/* Contactgegevens Sectie */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b">
               <Mail className="w-4 h-4 text-emerald-600" />
               <h3 className="font-semibold text-foreground">Contactgegevens</h3>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
@@ -217,7 +219,7 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
                   className="bg-background/30 border-border/30 focus-visible:ring-emerald-500/20"
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="telefoon">Telefoon</Label>
                 <Input
@@ -232,32 +234,32 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
             </div>
           </div>
 
-          {/* Tags Sectie */}
           <div className="space-y-4">
             <div className="flex items-center gap-2 pb-2 border-b">
               <Tag className="w-4 h-4 text-emerald-600" />
               <h3 className="font-semibold text-foreground">Tags</h3>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex gap-2">
                 <Input
                   placeholder="Tag toevoegen (bijv. Decision Maker)"
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
-                  onKeyPress={handleTagKeyPress}
+                  onKeyDown={handleTagKeyPress}
                   className="flex-1 bg-background/30 border-border/30 focus-visible:ring-emerald-500/20"
                 />
                 <Button
                   type="button"
                   onClick={handleAddTag}
+                  aria-label="Tag toevoegen"
                   variant="outline"
                   className="border-border/30"
                 >
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               {tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
@@ -270,6 +272,7 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
                       <button
                         type="button"
                         onClick={() => handleRemoveTag(tag)}
+                        aria-label={`Verwijder tag ${tag}`}
                         className="ml-2 hover:text-emerald-900 transition-colors"
                       >
                         <X className="w-3 h-3" />
@@ -281,32 +284,21 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="border-border/30"
+              disabled={loading}
             >
               Annuleren
             </Button>
             <Button
               type="submit"
-              disabled={loading}
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-lg shadow-emerald-500/25 min-w-[150px]"
+              disabled={loading || !formData.voornaam.trim() || !formData.achternaam.trim()}
+              className="bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
             >
-              {loading ? (
-                <>
-                  <div className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Opslaan...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Contact Aanmaken
-                </>
-              )}
+              {loading ? 'Opslaan...' : 'Contact Aanmaken'}
             </Button>
           </div>
         </form>

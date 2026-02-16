@@ -14,7 +14,7 @@ test('desktop sidebar navigatie wisselt pagina', async ({ page }, testInfo) => {
   await expect(page.getByRole('heading', { level: 1, name: /Bedrijven/i })).toBeVisible()
   await expect(page).toHaveURL(/\\?page=bedrijven/)
 
-  await desktopSidebar.getByRole('button', { name: 'Ga van start' }).click()
+  await desktopSidebar.getByRole('button', { name: /^(Dashboard|Ga van start)$/i }).click()
   await expect(page.getByRole('heading', { name: 'Welkom terug!' })).toBeVisible()
   await expect(page).not.toHaveURL(/\\bpage=/)
 })
@@ -78,4 +78,32 @@ test('mobile menu opent, navigeert en sluit', async ({ page }, testInfo) => {
   await sheet.getByRole('button', { name: 'Deals' }).click()
   await expect(page.getByRole('heading', { level: 1, name: 'Deals' })).toBeVisible()
   await expect(sheet).toBeHidden()
+})
+
+test('header knoppen voeren acties uit', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Alleen relevant op desktop viewport')
+
+  await page.goto('/')
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Upgrade' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Abonnement' })).toBeVisible()
+
+  await page.goto('/')
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Account' }).click()
+  await page.getByRole('menuitem', { name: 'Instellingen' }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Instellingen' })).toBeVisible()
+
+  await page.goto('/')
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Meldingen' }).click()
+  await page.getByRole('menuitem', { name: /Openstaande offertes/i }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Offertes' })).toBeVisible()
+
+  await page.goto('/')
+  await expect(page.locator('[data-mounted="true"]')).toHaveCount(1)
+  await page.getByRole('button', { name: 'Nieuwe actie' }).click()
+  await page.getByRole('menuitem', { name: /Nieuwe afspraak/i }).click()
+  await expect(page.getByRole('heading', { level: 1, name: 'Agenda' })).toBeVisible()
 })

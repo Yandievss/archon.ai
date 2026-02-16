@@ -106,7 +106,7 @@ export default function AddCompanyModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle>Nieuw Bedrijf</DialogTitle>
           <DialogDescription>
@@ -123,7 +123,8 @@ export default function AddCompanyModal({
                 <FormItem>
                   <FormLabel>Naam *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Bedrijfsnaam" {...field} />
+                    <Input placeholder="Bedrijfsnaam" {...field} required aria-required={true} autoFocus />
+                    {/* name field is required per schema */}
                   </FormControl>
                   <FormMessage />
                 </FormItem>

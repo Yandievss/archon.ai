@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from 'react'
 import { useTheme } from 'next-themes'
 import dynamic from 'next/dynamic'
+
 import { toast } from '@/hooks/use-toast'
 import StaticThreads from '@/components/StaticThreads'
 import DashboardHome from '@/components/dashboard/DashboardHome'
@@ -37,7 +38,6 @@ function PageLoading() {
   )
 }
 
-// Lazy-load pages so the initial dashboard bundle stays fast.
 const loadBedrijvenPage = () => import('@/components/pages/BedrijvenPage')
 const BedrijvenPage = dynamic(
   () => loadBedrijvenPage().then((m) => m.default),
@@ -108,6 +108,11 @@ const InstellingenPage = dynamic(
   () => loadInstellingenPage().then((m) => m.default),
   { loading: () => <PageLoading />, ssr: false }
 )
+const loadFacturenPage = () => import('@/components/pages/FacturenPage')
+const FacturenPage = dynamic(
+  () => loadFacturenPage().then((m) => m.default),
+  { loading: () => <PageLoading />, ssr: false }
+)
 
 const pageLoaders: Record<string, () => Promise<unknown>> = {
   bedrijven: loadBedrijvenPage,
@@ -124,6 +129,7 @@ const pageLoaders: Record<string, () => Promise<unknown>> = {
   'ai-assistant': loadAIAssistantPage,
   abonnement: loadAbonnementPage,
   instellingen: loadInstellingenPage,
+  facturen: loadFacturenPage,
 }
 
 function prefetchPage(page?: string) {
@@ -133,15 +139,13 @@ function prefetchPage(page?: string) {
   void loader().catch(() => {})
 }
 
-// Formatted date (outside component to avoid recreating)
-const getFormattedDate = () => {
-  return new Date().toLocaleDateString('nl-NL', {
+const getFormattedDate = () =>
+  new Date().toLocaleDateString('nl-NL', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
-    day: 'numeric'
+    day: 'numeric',
   })
-}
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -154,7 +158,7 @@ export default function Dashboard() {
   const navTokenRef = useRef(0)
   const { resolvedTheme, setTheme } = useTheme()
   const formattedDate = themeMounted ? getFormattedDate() : ''
-  const activePageLabel = pageLabelById.get(activePage) ?? 'Ga van start'
+  const activePageLabel = pageLabelById.get(activePage) ?? 'Dashboard'
   const pageSwitching = pagePreloading || isPageTransitionPending
   const toggleTheme = () => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')
   const toggleDesktopSidebar = () => setDesktopSidebarOpen((open) => !open)
@@ -167,8 +171,6 @@ export default function Dashboard() {
       return
     }
 
-    // Close overlays immediately; keep the current page rendered until the next page module is loaded
-    // so the UI doesn't "jump" to the loading skeleton on navigation.
     setSidebarOpen(false)
     setCommandOpen(false)
 
@@ -223,7 +225,6 @@ export default function Dashboard() {
     const nextPage = urlPage ?? storedPage
     if (nextPage && validPages.has(nextPage) && nextPage !== activePage) {
       const token = ++navTokenRef.current
-      // Avoid synchronous setState in an effect (eslint react-hooks/set-state-in-effect).
       const rafId = requestAnimationFrame(() => setPagePreloading(true))
 
       const loader = pageLoaders[nextPage]
@@ -245,7 +246,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (typeof window === 'undefined') return
 
-    // Warm the most-used page chunks shortly after first paint so first navigation feels instant.
     const warmPages = [
       'bedrijven',
       'contacten',
@@ -254,6 +254,7 @@ export default function Dashboard() {
       'projecten',
       'agenda',
       'ai-assistant',
+      'facturen',
     ] as const
 
     const timers = warmPages.map((page, index) =>
@@ -305,7 +306,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    // Keep page switches visually stable: no smooth scroll animation on navigation.
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [activePage])
 
@@ -348,7 +348,6 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [])
 
-  // Render page content based on active page
   const renderPageContent = () => {
     switch (activePage) {
       case 'bedrijven':
@@ -379,6 +378,8 @@ export default function Dashboard() {
         return <AbonnementPage />
       case 'instellingen':
         return <InstellingenPage />
+      case 'facturen':
+        return <FacturenPage />
       default:
         return (
           <DashboardHome
@@ -393,7 +394,6 @@ export default function Dashboard() {
   return (
     <div
       className="min-h-screen relative"
-      // Useful as a deterministic "hydration done" marker for E2E tests.
       data-mounted={themeMounted ? 'true' : 'false'}
     >
       <DesktopSidebar
@@ -414,7 +414,6 @@ export default function Dashboard() {
         onPrefetch={prefetchPage}
       />
 
-      {/* Main Content – alleen margin transition (sidebar), geen layout-animatie bij paginawissel */}
       <div className={`min-h-screen relative z-10 transition-[margin-left] duration-300 ${desktopSidebarOpen ? 'lg:ml-64' : 'lg:ml-0'}`}>
         <DashboardHeader
           sidebarOpen={sidebarOpen}
@@ -426,13 +425,15 @@ export default function Dashboard() {
           onToggleTheme={toggleTheme}
           activePageLabel={activePageLabel}
           pageSwitching={pageSwitching}
+          onNavigate={navigateTo}
+          onLogout={handleLogout}
         />
 
-        {/* Content – min-height voorkomt springen bij paginawissel / lazy load */}
         <div className="p-4 lg:p-6">
           <div className="mx-auto w-full max-w-[1760px]">
             <div className="flex items-start gap-6">
-              <div
+              <main
+                id="main-content"
                 className="flex-1 min-h-[calc(100dvh-10rem)]"
                 aria-busy={pageSwitching}
                 data-page-switching={pageSwitching ? 'true' : 'false'}
@@ -440,9 +441,8 @@ export default function Dashboard() {
                 <DashboardPageErrorBoundary pageKey={activePage} pageLabel={activePageLabel}>
                   {renderPageContent()}
                 </DashboardPageErrorBoundary>
-              </div>
+              </main>
 
-              {/* Static Threads Sidebar - No Animation */}
               <div className="hidden xl:block w-96 shrink-0 sticky top-24 self-start">
                 <StaticThreads />
               </div>

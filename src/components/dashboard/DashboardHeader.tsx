@@ -1,10 +1,55 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, Crown, Loader2, Menu, Moon, Plus, Search, Sun, User } from 'lucide-react'
+import {
+  Bell,
+  Briefcase,
+  CalendarDays,
+  Crown,
+  FileText,
+  Loader2,
+  LogOut,
+  Menu,
+  Moon,
+  Plus,
+  Receipt,
+  Search,
+  Settings,
+  Sun,
+  User,
+} from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
-import { toast } from '@/hooks/use-toast'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+
+const notificationItems = [
+  {
+    id: 'notifications-open-offertes',
+    title: 'Openstaande offertes',
+    description: 'Controleer opvolging van nieuwe offertes.',
+    page: 'offertes',
+  },
+  {
+    id: 'notifications-today-agenda',
+    title: 'Afspraken vandaag',
+    description: 'Bekijk uw planning en tijden voor vandaag.',
+    page: 'agenda',
+  },
+  {
+    id: 'notifications-followup-deals',
+    title: 'Deals in opvolging',
+    description: 'Werk de volgende dealstappen bij.',
+    page: 'deals',
+  },
+] as const
 
 function LiveClock({ className }: { className?: string }) {
   const [now, setNow] = useState(() => new Date())
@@ -45,6 +90,8 @@ export default function DashboardHeader({
   onToggleTheme,
   activePageLabel,
   pageSwitching,
+  onNavigate,
+  onLogout,
 }: {
   sidebarOpen: boolean
   onOpenSidebar: () => void
@@ -55,7 +102,15 @@ export default function DashboardHeader({
   onToggleTheme: () => void
   activePageLabel: string
   pageSwitching: boolean
+  onNavigate: (page: string) => void
+  onLogout: () => void
 }) {
+  const [unreadNotifications, setUnreadNotifications] = useState<number>(notificationItems.length)
+
+  const navigateFromMenu = (page: string) => {
+    onNavigate(page)
+  }
+
   return (
     <header className="sticky top-0 z-30 bg-background/30 backdrop-blur-xl border-b border-border/20">
       <div className="px-4 lg:px-6 py-3">
@@ -140,69 +195,140 @@ export default function DashboardHeader({
               {themeMounted && resolvedTheme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <Button
-              aria-label="Meldingen"
-              title="Meldingen"
-              variant="ghost"
-              size="icon"
-              className="relative hover:bg-card/60"
-              onClick={() =>
-                toast({
-                  title: 'Meldingen',
-                  description: 'Meldingen zijn nog niet gekoppeld in deze demo.',
-                })
-              }
+            <DropdownMenu
+              onOpenChange={(open) => {
+                if (open && unreadNotifications > 0) {
+                  setUnreadNotifications(0)
+                }
+              }}
             >
-              <Bell className="w-5 h-5" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-border/30" />
-            </Button>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Meldingen"
+                  title="Meldingen"
+                  variant="ghost"
+                  size="icon"
+                  className="relative hover:bg-card/60"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadNotifications > 0 ? (
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-border/30"
+                    />
+                  ) : null}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel className="flex items-center justify-between gap-3">
+                  <span>Meldingen</span>
+                  <span className="text-xs font-normal text-muted-foreground">
+                    {notificationItems.length} items
+                  </span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notificationItems.map((item) => (
+                  <DropdownMenuItem
+                    key={item.id}
+                    className="flex flex-col items-start gap-0.5 py-2"
+                    onSelect={() => navigateFromMenu(item.page)}
+                  >
+                    <span className="font-medium text-sm">{item.title}</span>
+                    <span className="text-xs text-muted-foreground">{item.description}</span>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigateFromMenu('instellingen')}>
+                  <Settings className="w-4 h-4" />
+                  Meldingen-instellingen
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-            <Button
-              aria-label="Account"
-              title="Account"
-              variant="ghost"
-              size="icon"
-              className="hidden sm:inline-flex hover:bg-card/60"
-              onClick={() =>
-                toast({
-                  title: 'Account',
-                  description: 'Account-instellingen zijn nog niet gekoppeld in deze demo.',
-                })
-              }
-            >
-              <User className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Account"
+                  title="Account"
+                  variant="ghost"
+                  size="icon"
+                  className="hidden sm:inline-flex hover:bg-card/60"
+                >
+                  <User className="w-5 h-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigateFromMenu('instellingen')}>
+                  <Settings className="w-4 h-4" />
+                  Instellingen
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigateFromMenu('abonnement')}>
+                  <Crown className="w-4 h-4" />
+                  Abonnement
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem variant="destructive" onSelect={onLogout}>
+                  <LogOut className="w-4 h-4" />
+                  Uitloggen
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <Button
-            className="hidden sm:flex bg-gradient-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
+            className="hidden sm:flex bg-linear-to-r from-blue-500 to-sky-500 hover:from-blue-600 hover:to-sky-600 text-white shadow-lg shadow-blue-500/25 transition-all duration-200"
             title="Upgrade"
-            onClick={() =>
-              toast({
-                title: 'Upgrade',
-                description: 'Abonnementen zijn nog niet gekoppeld in deze demo.',
-              })
-            }
+            onClick={() => onNavigate('abonnement')}
           >
             <Crown className="w-4 h-4 mr-2" />
             Upgrade
           </Button>
 
-          <Button
-            aria-label="Nieuwe actie"
-            title="Nieuwe actie"
-            variant="ghost"
-            size="icon"
-            className="bg-card/60 hover:bg-card/75 text-foreground border border-border/30 shadow-lg transition-all duration-200"
-            onClick={() =>
-              toast({
-                title: 'Nieuwe actie',
-                description: 'Snelle acties zijn nog niet gekoppeld in deze demo.',
-              })
-            }
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                aria-label="Nieuwe actie"
+                title="Nieuwe actie"
+                variant="ghost"
+                size="icon"
+                className="bg-card/60 hover:bg-card/75 text-foreground border border-border/30 shadow-lg transition-all duration-200"
+              >
+                <Plus className="w-5 h-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Snelle acties</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => {
+                  onOpenCommand()
+                }}
+              >
+                <Search className="w-4 h-4" />
+                Zoeken of commando
+                <DropdownMenuShortcut>Ctrl+K</DropdownMenuShortcut>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => navigateFromMenu('deals')}>
+                <Briefcase className="w-4 h-4" />
+                Nieuwe deal
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigateFromMenu('offertes')}>
+                <FileText className="w-4 h-4" />
+                Nieuwe offerte
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigateFromMenu('agenda')}>
+                <CalendarDays className="w-4 h-4" />
+                Nieuwe afspraak
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => navigateFromMenu('inkomsten')}>
+                <Receipt className="w-4 h-4" />
+                Nieuwe factuur
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

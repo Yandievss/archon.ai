@@ -84,10 +84,30 @@ export type Database = {
           geldig_tot: string
           status: 'Openstaand' | 'Geaccepteerd' | 'Afgewezen'
           bedrijf_id: number | null
+          ai_fotos: unknown[]
+          ai_afmetingen: Record<string, unknown>
+          ai_analyse: Record<string, unknown> | null
+          ai_analyse_status: string
+          ai_analyse_fout: string | null
+          ai_analyse_at: string | null
           created_at: string
           updated_at: string
         }
-        Insert: Omit<Database['public']['Tables']['offertes']['Row'], 'id' | 'created_at' | 'updated_at'>
+        Insert: {
+          nummer: string
+          klant: string
+          bedrag: number
+          datum: string
+          geldig_tot: string
+          status: 'Openstaand' | 'Geaccepteerd' | 'Afgewezen'
+          bedrijf_id: number | null
+          ai_fotos?: unknown[]
+          ai_afmetingen?: Record<string, unknown>
+          ai_analyse?: Record<string, unknown> | null
+          ai_analyse_status?: string
+          ai_analyse_fout?: string | null
+          ai_analyse_at?: string | null
+        }
         Update: Partial<Database['public']['Tables']['offertes']['Insert']>
       }
     }

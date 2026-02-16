@@ -3,7 +3,7 @@ import { test, expect, type Locator, type Page } from '@playwright/test'
 type PageInfo = { id: string; label: string; contentId?: string }
 
 const PAGES: PageInfo[] = [
-  { id: 'home', label: 'Ga van start', contentId: 'Welkom terug' },
+  { id: 'home', label: 'Dashboard', contentId: 'Welkom terug' },
   { id: 'bedrijven', label: 'Bedrijven', contentId: 'Bedrijven' },
   { id: 'contacten', label: 'Contacten', contentId: 'Contacten' },
   { id: 'deals', label: 'Deals', contentId: 'Deals' },
@@ -85,7 +85,7 @@ test.describe('Button Functionality - Dashboard', () => {
     test.skip(testInfo.project.name !== 'chromium', 'Desktop test')
 
     const keyPages: PageInfo[] = [
-      { id: 'home', label: 'Ga van start' },
+      { id: 'home', label: 'Dashboard' },
       { id: 'bedrijven', label: 'Bedrijven' },
       { id: 'deals', label: 'Deals' },
       { id: 'instellingen', label: 'Instellingen' },
@@ -130,7 +130,7 @@ test.describe('Button Functionality - Dashboard', () => {
     test.skip(testInfo.project.name !== 'mobile', 'Mobile test')
 
     const keyPages: PageInfo[] = [
-      { id: 'home', label: 'Ga van start' },
+      { id: 'home', label: 'Dashboard' },
       { id: 'bedrijven', label: 'Bedrijven' },
       { id: 'deals', label: 'Deals' },
     ]

@@ -111,8 +111,8 @@ export default function DashboardCommandPalette({
       title="Zoeken"
       description="Zoek een pagina of voer een actie uit."
     >
-      <CommandInput 
-        placeholder="Typ om te zoeken..." 
+      <CommandInput
+        placeholder="Typ om te zoeken..."
         value={searchQuery}
         onValueChange={setSearchQuery}
       />

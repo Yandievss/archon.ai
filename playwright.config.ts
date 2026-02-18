@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test'
 
 // Run E2E against a dedicated prod server port to avoid Next dev lock/port collisions.
 const PORT = process.env.PLAYWRIGHT_PORT ? Number(process.env.PLAYWRIGHT_PORT) : 3100
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${PORT}`
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://localhost:${PORT}`
 
 export default defineConfig({
   testDir: './e2e',
@@ -28,6 +28,9 @@ export default defineConfig({
     command: `npx next dev -p ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
+    env: {
+      NEXT_PUBLIC_E2E: process.env.NEXT_PUBLIC_E2E ?? 'true',
+    },
     timeout: 120_000,
   },
   projects: [

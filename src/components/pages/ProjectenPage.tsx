@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
+  Building2,
   Calendar,
   Eye,
   FolderKanban,
+  LayoutGrid,
+  LayoutList,
   Loader2,
   Pencil,
   Plus,
@@ -36,6 +39,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { useDashboardQueryEnum, useDashboardQueryText } from '@/hooks/use-dashboard-query-state'
 import { toast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
@@ -95,6 +106,7 @@ export default function ProjectenPage({ autoOpenCreate }: { autoOpenCreate?: boo
     'deadline',
     ['deadline', 'budget', 'voortgang', 'naam'] as const
   )
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [detailModalOpen, setDetailModalOpen] = useState(false)
@@ -243,13 +255,33 @@ export default function ProjectenPage({ autoOpenCreate }: { autoOpenCreate?: boo
           </h1>
           <p className="text-muted-foreground mt-1">Beheer uw projecten</p>
         </div>
-        <Button
-          className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
-          onClick={() => setModalOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nieuw Project
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border/50">
+            <Button
+              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode('grid')}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => setViewMode('list')}
+            >
+              <LayoutList className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            className="bg-linear-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white shadow-lg shadow-indigo-500/25"
+            onClick={() => setModalOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nieuw Project
+          </Button>
+        </div>
       </div>
 
       <PagePanel className="p-4">
@@ -311,114 +343,228 @@ export default function ProjectenPage({ autoOpenCreate }: { autoOpenCreate?: boo
       )}
 
       {!error && (loading || filteredProjects.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading && Array.from({ length: 6 }).map((_, index) => (
-            <div key={`project-loading-${index}`} className="h-72 rounded-2xl bg-muted/30 animate-pulse" />
-          ))}
+        viewMode === 'grid' ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading && Array.from({ length: 6 }).map((_, index) => (
+              <div key={`project-loading-${index}`} className="h-72 rounded-2xl bg-muted/30 animate-pulse" />
+            ))}
 
-          {!loading && filteredProjects.map((project) => (
-            <Card
-              key={project.id}
-              className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300"
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <CardTitle className="text-lg font-semibold text-foreground group-hover:text-indigo-500 transition-colors">
-                      {project.naam}
-                    </CardTitle>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {project.budget > 0 ? `€${project.budget.toLocaleString('nl-NL')}` : 'Geen budget'}
-                      </Badge>
+            {!loading && filteredProjects.map((project) => (
+              <Card
+                key={project.id}
+                className="group bg-card/60 backdrop-blur-xl border border-border/30 rounded-2xl p-5 hover:shadow-xl hover:bg-card/75 hover:border-border/50 transition-[background-color,box-shadow,border-color] duration-300"
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg font-semibold text-foreground group-hover:text-indigo-500 transition-colors">
+                        {project.naam}
+                      </CardTitle>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className="text-xs">
+                          {project.budget > 0 ? `€${project.budget.toLocaleString('nl-NL')}` : 'Geen budget'}
+                        </Badge>
+                      </div>
                     </div>
+                    <StatusBadge status={project.status} />
                   </div>
-                  <StatusBadge status={project.status} />
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>Deadline: {formatDate(project.deadline)}</span>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
-                  {project.beschrijving || 'Geen beschrijving'}
-                </p>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Bedrijf</span>
-                    <span className="font-medium text-foreground">{project.bedrijf ?? '-'}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Gebruikt budget</span>
-                    <span className="font-medium text-foreground">€{project.budgetGebruikt.toLocaleString('nl-NL')}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Voortgang</span>
-                      <span className="font-medium text-foreground">{project.voortgang}%</span>
-                    </div>
-                    <Progress value={project.voortgang} className="h-2" />
-                  </div>
-                </div>
-              </CardContent>
-
-              <CardFooter className="pt-3 border-t border-border/30">
-                <div className="flex items-center justify-between w-full">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span>{project.status}</span>
+                    <Calendar className="w-4 h-4" />
+                    <span>Deadline: {formatDate(project.deadline)}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10"
-                      onClick={() => {
-                        setSelectedProject(project)
-                        setDetailModalOpen(true)
-                      }}
-                      title="Project details bekijken"
-                      disabled={deletingId === project.id}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
-                      onClick={() => void updateProjectStatus(project.id, nextStatus(project.status))}
-                      title="Status wijzigen"
-                      disabled={statusUpdatingId === project.id || deletingId === project.id}
-                    >
-                      {statusUpdatingId === project.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Pencil className="w-4 h-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                      onClick={() => void deleteProject(project.id, project.naam)}
-                      title="Project verwijderen"
-                      disabled={deletingId === project.id || statusUpdatingId === project.id}
-                    >
-                      {deletingId === project.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </Button>
+                </CardHeader>
+
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-3 line-clamp-3">
+                    {project.beschrijving || 'Geen beschrijving'}
+                  </p>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Bedrijf</span>
+                      <span className="font-medium text-foreground">{project.bedrijf ?? '-'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Gebruikt budget</span>
+                      <span className="font-medium text-foreground">€{project.budgetGebruikt.toLocaleString('nl-NL')}</span>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Voortgang</span>
+                        <span className="font-medium text-foreground">{project.voortgang}%</span>
+                      </div>
+                      <Progress value={project.voortgang} className="h-2" />
+                    </div>
                   </div>
-                </div>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
+                </CardContent>
+
+                <CardFooter className="pt-3 border-t border-border/30">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      <span>{project.status}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10"
+                        onClick={() => {
+                          setSelectedProject(project)
+                          setDetailModalOpen(true)
+                        }}
+                        title="Project details bekijken"
+                        disabled={deletingId === project.id}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                        onClick={() => void updateProjectStatus(project.id, nextStatus(project.status))}
+                        title="Status wijzigen"
+                        disabled={statusUpdatingId === project.id || deletingId === project.id}
+                      >
+                        {statusUpdatingId === project.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Pencil className="w-4 h-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                        onClick={() => void deleteProject(project.id, project.naam)}
+                        title="Project verwijderen"
+                        disabled={deletingId === project.id || statusUpdatingId === project.id}
+                      >
+                        {deletingId === project.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border/40 bg-card/60 backdrop-blur-xl overflow-hidden">
+            <Table>
+              <TableHeader className="bg-muted/50">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="w-[250px]">Projectnaam</TableHead>
+                  <TableHead>Bedrijf</TableHead>
+                  <TableHead>Deadline</TableHead>
+                  <TableHead>Budget</TableHead>
+                  <TableHead>Voortgang</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading && Array.from({ length: 6 }).map((_, index) => (
+                  <TableRow key={`loading-${index}`}>
+                    <TableCell colSpan={7}>
+                      <div className="h-10 rounded bg-muted/30 animate-pulse" />
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {!loading && filteredProjects.map((project) => (
+                  <TableRow
+                    key={project.id}
+                    className="hover:bg-muted/30 cursor-pointer transition-colors"
+                    onClick={() => {
+                      setSelectedProject(project)
+                      setDetailModalOpen(true)
+                    }}
+                  >
+                    <TableCell>
+                      <p className="font-medium text-foreground">{project.naam}</p>
+                    </TableCell>
+                    <TableCell>
+                      {project.bedrijf ? (
+                        <div className="flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-muted-foreground" />
+                          <span>{project.bedrijf}</span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-muted-foreground" />
+                        {formatDate(project.deadline)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">{project.budget > 0 ? `€${project.budget.toLocaleString('nl-NL')}` : '-'}</span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={project.voortgang} className="h-2 flex-1 w-24" />
+                        <span className="text-xs font-medium text-muted-foreground w-8">{project.voortgang}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge status={project.status} />
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10"
+                          onClick={() => {
+                            setSelectedProject(project)
+                            setDetailModalOpen(true)
+                          }}
+                          title="Project details bekijken"
+                          disabled={deletingId === project.id}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                          onClick={() => void updateProjectStatus(project.id, nextStatus(project.status))}
+                          title="Status wijzigen"
+                          disabled={statusUpdatingId === project.id || deletingId === project.id}
+                        >
+                          {statusUpdatingId === project.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Pencil className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
+                          onClick={() => void deleteProject(project.id, project.naam)}
+                          title="Project verwijderen"
+                          disabled={deletingId === project.id || statusUpdatingId === project.id}
+                        >
+                          {deletingId === project.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )
       )}
 
       {!loading && !error && filteredProjects.length === 0 && (

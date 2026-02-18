@@ -1,5 +1,5 @@
 import FacturenPage from '@/components/pages/FacturenPage'
 
-export default function FacturenRoute() {
+export default function FacturenRoutePage() {
   return <FacturenPage />
 }

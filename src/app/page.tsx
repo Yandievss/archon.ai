@@ -132,6 +132,29 @@ const pageLoaders: Record<string, () => Promise<unknown>> = {
   facturen: loadFacturenPage,
 }
 
+const routeBackedPages = new Set<string>([
+  'abonnement',
+  'agenda',
+  'ai-assistant',
+  'artikelen',
+  'betalingen',
+  'bedrijven',
+  'contacten',
+  'deals',
+  'facturen',
+  'inkomsten',
+  'instellingen',
+  'offertes',
+  'projecten',
+  'timesheets',
+  'uitgaven',
+])
+
+function getRoutePath(page: string): string {
+  if (!validPages.has(page) || page === 'home') return '/'
+  return `/${page}`
+}
+
 function prefetchPage(page?: string) {
   if (!page) return
   const loader = pageLoaders[page]
@@ -166,6 +189,13 @@ export default function Dashboard() {
 
   const navigateTo = (page: string) => {
     const nextPage = validPages.has(page) ? page : 'home'
+
+    if (nextPage !== 'home' && routeBackedPages.has(nextPage) && typeof window !== 'undefined') {
+      window.localStorage.setItem('archonpro.activePage', nextPage)
+      window.location.assign(getRoutePath(nextPage))
+      return
+    }
+
     if (nextPage === activePage) {
       setSidebarOpen(false)
       setCommandOpen(false)
@@ -230,6 +260,12 @@ export default function Dashboard() {
     }
 
     const nextPage = urlPage ?? storedPage
+    if (nextPage && validPages.has(nextPage) && routeBackedPages.has(nextPage)) {
+      window.localStorage.setItem('archonpro.activePage', nextPage)
+      window.location.replace(getRoutePath(nextPage))
+      return
+    }
+
     if (nextPage && validPages.has(nextPage) && nextPage !== activePage) {
       const token = ++navTokenRef.current
       const rafId = requestAnimationFrame(() => setPagePreloading(true))

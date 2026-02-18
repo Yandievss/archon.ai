@@ -6,6 +6,14 @@ function safeJson(res: Response) {
     .catch(() => null)
 }
 
+/** Zorgt dat we altijd een array hebben (API kan { error } of { data } teruggeven). */
+function toArray(x: unknown): any[] {
+  if (Array.isArray(x)) return x
+  if (x != null && typeof x === 'object' && 'data' in x && Array.isArray((x as any).data)) return (x as any).data
+  if (x != null && typeof x === 'object' && 'appointments' in x && Array.isArray((x as any).appointments)) return (x as any).appointments
+  return []
+}
+
 function groupByDay(items: any[], dateKey = 'datum') {
   const map = new Map<string, number>()
   for (const it of items || []) {
@@ -65,13 +73,13 @@ export function useDashboardData() {
 
         if (cancelled) return
 
-        // normalize endpoints that return { data } vs arrays
-        setCompanies(Array.isArray(c) ? c : c?.data ?? c ?? [])
-        setContacts(Array.isArray(ct) ? ct : ct?.data ?? ct ?? [])
-        setAppointments(Array.isArray(a) ? a : a?.data ?? a ?? [])
-        setIncomes(Array.isArray(i) ? i : i?.data ?? i ?? [])
-        setOffertes(Array.isArray(o) ? o : o?.data ?? o ?? [])
-        setProjects(Array.isArray(p) ? p : p?.data ?? p ?? [])
+        // normalize endpoints that return { data } / { error } vs arrays
+        setCompanies(toArray(c))
+        setContacts(toArray(ct))
+        setAppointments(toArray(a))
+        setIncomes(toArray(i))
+        setOffertes(toArray(o))
+        setProjects(toArray(p))
       } catch (err: any) {
         if (cancelled) return
         console.error('Failed to load dashboard data', err)
@@ -90,13 +98,14 @@ export function useDashboardData() {
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), [])
 
   const stats = useMemo(() => {
-    const appointmentsToday = (appointments ?? []).filter((a) => {
+    const appointmentsList = toArray(appointments)
+    const appointmentsToday = appointmentsList.filter((a) => {
       const d = a?.datum ?? a?.date ?? null
       if (!d) return false
       return (new Date(d)).toISOString().slice(0, 10) === todayStr
     }).length
 
-    const overdueOffertes = (offertes ?? []).filter((o) => {
+    const overdueOffertes = toArray(offertes).filter((o) => {
       const status = (o?.status ?? '').toLowerCase()
       const geldig = o?.geldigTot ?? o?.geldig_tot ?? o?.validtot ?? null
       if (status !== 'openstaand' && status !== 'open') return false
@@ -104,12 +113,12 @@ export function useDashboardData() {
       return new Date(geldig) < new Date()
     }).length
 
-    const dealsInFollowUp = (offertes ?? []).filter((o) => {
+    const dealsInFollowUp = toArray(offertes).filter((o) => {
       const status = (o?.status ?? '').toLowerCase()
       return status === 'openstaand' || status === 'voorstel' || status === 'onderhandeling'
     }).length
 
-    const tasksDue = (projects ?? []).filter((pr) => {
+    const tasksDue = toArray(projects).filter((pr) => {
       const endDate = pr?.einddatum ?? pr?.endDate ?? pr?.end_date ?? null
       if (!endDate) return false
       const daysLeft = Math.ceil((new Date(endDate).getTime() - Date.now()) / 86400000)
@@ -119,11 +128,11 @@ export function useDashboardData() {
     return { appointmentsToday, overdueOffertes, dealsInFollowUp, tasksDue }
   }, [appointments, offertes, projects, todayStr])
 
-  const revenueData = useMemo(() => groupByDay(incomes ?? [], 'datum'), [incomes])
+  const revenueData = useMemo(() => groupByDay(toArray(incomes), 'datum'), [incomes])
 
   const dealsData = useMemo(() => {
     const byStatus = new Map<string, number>()
-    for (const o of offertes ?? []) {
+    for (const o of toArray(offertes)) {
       const s = (o?.status ?? 'Onbekend')
       byStatus.set(s, (byStatus.get(s) ?? 0) + 1)
     }
@@ -135,7 +144,7 @@ export function useDashboardData() {
 
   const activities = useMemo(() => {
     const acts: any[] = []
-    for (const a of (appointments ?? []).slice(0, 6)) {
+    for (const a of toArray(appointments).slice(0, 6)) {
       acts.push({
         id: a?.id ?? `appt-${Math.random().toString(36).slice(2)}`,
         time: a?.tijd ?? a?.time ?? '',
@@ -144,7 +153,7 @@ export function useDashboardData() {
         type: 'appointment'
       })
     }
-    for (const i of (incomes ?? []).slice(0, 6)) {
+    for (const i of toArray(incomes).slice(0, 6)) {
       acts.push({
         id: i?.id ?? `income-${Math.random().toString(36).slice(2)}`,
         time: i?.created_at ?? i?.createdAt ?? '',
@@ -153,7 +162,7 @@ export function useDashboardData() {
         type: 'invoice'
       })
     }
-    for (const c of (contacts ?? []).slice(0, 6)) {
+    for (const c of toArray(contacts).slice(0, 6)) {
       acts.push({
         id: c?.id ?? `contact-${Math.random().toString(36).slice(2)}`,
         time: c?.createdAt ?? c?.created_at ?? '',

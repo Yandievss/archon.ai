@@ -14,14 +14,18 @@ export default defineConfig({
     ['html', { open: 'never', outputFolder: 'output/playwright/report' }],
   ],
   outputDir: 'output/playwright/test-results',
+  timeout: 120_000,
   use: {
     baseURL,
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
+    navigationTimeout: 60_000,
+    actionTimeout: 15_000,
   },
   webServer: {
-    command: `npm run build && PORT=${PORT} npm run start`,
+    // command: `npm run build && PORT=${PORT} npm run start`, // 'cp' fails on Windows
+    command: `npx next dev -p ${PORT}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

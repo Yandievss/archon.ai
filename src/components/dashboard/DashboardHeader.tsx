@@ -106,9 +106,19 @@ export default function DashboardHeader({
   onLogout: () => void
 }) {
   const [unreadNotifications, setUnreadNotifications] = useState<number>(notificationItems.length)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const navigateFromMenu = (page: string) => {
     onNavigate(page)
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      await Promise.resolve(onLogout())
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -269,9 +279,9 @@ export default function DashboardHeader({
                   Abonnement
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive" onSelect={onLogout}>
-                  <LogOut className="w-4 h-4" />
-                  Uitloggen
+                <DropdownMenuItem variant="destructive" onSelect={handleLogout} disabled={isLoggingOut}>
+                  {isLoggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+                  {isLoggingOut ? 'Bezig met uitloggen...' : 'Uitloggen'}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

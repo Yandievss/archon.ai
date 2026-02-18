@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-
-import {
-  mapCompanyNamesById,
-  resolveCompanyId,
-} from '@/app/api/finance/finance-utils'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
-
+import { handleApiError, resolveCompanyId } from '@/lib/api-utils'
+import { mapCompanyNamesById } from '@/app/api/finance/finance-utils'
 import {
   combineDateAndTime,
   normalizeAfspraakRow,
@@ -28,19 +24,9 @@ const CreateAfspraakSchema = z.object({
 const afspraakSelect = 'id, titel, beschrijving, start_tijd, eind_tijd, locatie, deelnemers, bedrijf_id, created_at'
 
 export async function GET() {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
   try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    const result = await (supabase as any)
+    const supabase = getSupabaseAdmin()
+    const result = await supabase
       .from('afspraken')
       .select(afspraakSelect)
       .order('start_tijd', { ascending: true })
@@ -50,7 +36,7 @@ export async function GET() {
 
     const rows = (result.data ?? []) as any[]
     const companyMap = await mapCompanyNamesById(
-      supabase as any,
+      supabase,
       rows.map((row) => row.bedrijf_id as number | null | undefined)
     )
 
@@ -61,26 +47,13 @@ export async function GET() {
       }))
     )
   } catch (error) {
-    console.error('Error fetching afspraken:', error)
-    return NextResponse.json({ error: 'Kon afspraken niet laden.' }, { status: 500 })
+    return handleApiError(error, 'Kon afspraken niet laden')
   }
 }
 
 export async function POST(request: Request) {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
-  try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
   try {
     const body = await request.json()
-
     const validated = CreateAfspraakSchema.parse({
       titel: body?.titel ?? body?.onderwerp,
       beschrijving: body?.beschrijving,
@@ -106,13 +79,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Ongeldige eindtijd.' }, { status: 400 })
     }
 
+    const supabase = getSupabaseAdmin()
     const bedrijfId = await resolveCompanyId({
-      supabase: supabase as any,
+      supabase,
       companyName: validated.bedrijf,
       requestedCompanyId: validated.bedrijfId,
     })
 
-    const insertResult = await (supabase as any)
+    const insertResult = await supabase
       .from('afspraken')
       .insert([
         {
@@ -130,7 +104,7 @@ export async function POST(request: Request) {
 
     if (insertResult.error) throw insertResult.error
 
-    const companyMap = await mapCompanyNamesById(supabase as any, [(insertResult.data as any).bedrijf_id])
+    const companyMap = await mapCompanyNamesById(supabase, [(insertResult.data as any).bedrijf_id])
 
     return NextResponse.json(
       normalizeAfspraakRow({
@@ -146,8 +120,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
-    console.error('Error creating afspraak:', error)
-    return NextResponse.json({ error: 'Kon afspraak niet aanmaken.' }, { status: 500 })
+    return handleApiError(error, 'Kon afspraak niet aanmaken')
   }
 }

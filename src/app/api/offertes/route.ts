@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
-
+import { handleApiError, resolveCompanyId } from '@/lib/api-utils'
 import {
   offerteAiSelect,
   offerteBaseSelect,
@@ -88,34 +87,6 @@ const CreateOfferteSchema = z.object({
   aiProvider: z.enum(offerteAiProviderValues).optional(),
 })
 
-async function resolveCompanyId(supabase: any, klant: string, requestedCompanyId: number | null | undefined) {
-  if (requestedCompanyId != null) return requestedCompanyId
-
-  const trimmedName = klant.trim()
-  if (!trimmedName) return null
-
-  const existingCompany = await supabase
-    .from('bedrijven')
-    .select('id')
-    .ilike('naam', trimmedName)
-    .order('id', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (existingCompany.error) throw existingCompany.error
-  if (existingCompany.data?.id != null) return Number(existingCompany.data.id)
-
-  const createdCompany = await supabase
-    .from('bedrijven')
-    .insert([{ naam: trimmedName }])
-    .select('id')
-    .single()
-
-  if (createdCompany.error) throw createdCompany.error
-
-  return Number(createdCompany.data.id)
-}
-
 function readFormValue(value: FormDataEntryValue | null | undefined) {
   if (typeof value !== 'string') return undefined
   const trimmed = value.trim()
@@ -162,17 +133,13 @@ async function parseCreateOfferteRequest(request: Request): Promise<ParsedCreate
     const formData = await request.formData()
     const files: Array<{ file: File, roomId?: string }> = []
 
-    // Global photos
     const globalFiles = [...formData.getAll('fotos'), ...formData.getAll('foto')]
       .filter((value): value is File => value instanceof File && value.size > 0)
     
     globalFiles.forEach(file => files.push({ file }))
 
-    // Room photos
     for (const [key, value] of formData.entries()) {
       if (value instanceof File && value.size > 0) {
-        // Match keys like room_UUID_photos OR room_UUID_photos[]
-        // Or specific pattern I decide on frontend: `room_photos_${roomId}`
         const match = key.match(/^room_photos_(.+)$/)
         if (match) {
           const roomId = match[1]
@@ -218,19 +185,9 @@ async function parseCreateOfferteRequest(request: Request): Promise<ParsedCreate
 }
 
 export async function GET() {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
   try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    const supportsAi = await supportsOfferteAiColumns(supabase as any)
+    const supabase = getSupabaseAdmin()
+    const supportsAi = await supportsOfferteAiColumns(supabase)
 
     const { data, error } = await supabase
       .from('offertes')
@@ -242,25 +199,14 @@ export async function GET() {
 
     return NextResponse.json((data ?? []).map(normalizeOfferteRow))
   } catch (error) {
-    console.error('Error fetching offertes:', error)
-    return NextResponse.json({ error: 'Kon offertes niet laden.' }, { status: 500 })
+    return handleApiError(error, 'Kon offertes niet laden')
   }
 }
 
 export async function POST(request: Request) {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
   try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    const supportsAi = await supportsOfferteAiColumns(supabase as any)
+    const supabase = getSupabaseAdmin()
+    const supportsAi = await supportsOfferteAiColumns(supabase)
     const { payload, files } = await parseCreateOfferteRequest(request)
 
     const validated = CreateOfferteSchema.parse({
@@ -289,7 +235,11 @@ export async function POST(request: Request) {
     const nummer = validated.nummer ?? generateOfferteNumber()
     const datum = toIsoDate(validated.datum, today)
     const geldigTot = toIsoDate(validated.geldigTot, defaultValidUntil)
-    const bedrijfId = await resolveCompanyId(supabase as any, validated.klant, validated.bedrijfId)
+    const bedrijfId = await resolveCompanyId({
+      supabase,
+      companyName: validated.klant,
+      requestedCompanyId: validated.bedrijfId
+    })
 
     const baseInsert = {
       nummer,
@@ -313,7 +263,7 @@ export async function POST(request: Request) {
         }
       : baseInsert
 
-    const insertResult = await (supabase as any)
+    const insertResult = await supabase
       .from('offertes')
       .insert([insertPayload])
       .select(supportsAi ? offerteAiSelect : offerteBaseSelect)
@@ -327,7 +277,6 @@ export async function POST(request: Request) {
           { status: 409 }
         )
       }
-
       throw insertResult.error
     }
 
@@ -338,7 +287,7 @@ export async function POST(request: Request) {
     const createdOfferteId = Number(insertResult.data.id)
 
     try {
-      const photos = await uploadOffertePhotos(supabase as any, createdOfferteId, files)
+      const photos = await uploadOffertePhotos(supabase, createdOfferteId, files)
       const analysis = await runOfferteAiAnalysis({
         nummer,
         klant: validated.klant,
@@ -349,7 +298,7 @@ export async function POST(request: Request) {
         provider: validated.aiProvider as OfferteAiProvider | undefined,
       })
 
-      const updateResult = await (supabase as any)
+      const updateResult = await supabase
         .from('offertes')
         .update({
           ai_fotos: photos,
@@ -367,29 +316,22 @@ export async function POST(request: Request) {
 
       return NextResponse.json(normalizeOfferteRow(updateResult.data), { status: 201 })
     } catch (error) {
-      await (supabase as any).from('offertes').delete().eq('id', createdOfferteId)
+      await supabase.from('offertes').delete().eq('id', createdOfferteId)
       throw error
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        {
-          error: 'Validatiefout',
-          details: error.issues,
-        },
+        { error: 'Validatiefout', details: error.issues },
         { status: 400 }
       )
     }
-
     if (error instanceof SyntaxError) {
       return NextResponse.json({ error: 'Ongeldige JSON payload.' }, { status: 400 })
     }
-
     if (error instanceof Error && error.message.includes('Afmetingen JSON is ongeldig')) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
-
-    console.error('Error creating offerte:', error)
-    return NextResponse.json({ error: 'Kon offerte niet aanmaken.' }, { status: 500 })
+    return handleApiError(error, 'Kon offerte niet aanmaken')
   }
 }

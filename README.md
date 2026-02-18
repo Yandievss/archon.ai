@@ -1,69 +1,69 @@
 # ArchonPro Dashboard
 
-ArchonPro is a business suite dashboard (CRM + projecten + offertes + financiën + AI assistent) gebouwd met Next.js (App Router), TypeScript, Tailwind CSS v4 en shadcn/ui.
+ArchonPro is een geavanceerde business suite dashboard (CRM + projecten + offertes + financiën + AI assistent) gebouwd met de modernste webtechnologieën.
 
-## Vereisten
+## 🚀 Technologieën
 
-- Node.js 18+ (aanbevolen: 20+)
-- npm
+- **Framework:** [Next.js 15+](https://nextjs.org/) (App Router)
+- **Taal:** [TypeScript](https://www.typescriptlang.org/)
+- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Componenten:** [shadcn/ui](https://ui.shadcn.com/)
+- **Database & Auth:** [Supabase](https://supabase.com/)
+- **ORM:** [Prisma](https://www.prisma.io/)
+- **AI Integratie:** OpenAI & Google Gemini
 
-## Starten
+## 📋 Vereisten
 
-```bash
-npm install
-npm run dev
-```
+- Node.js 20+
+- npm of pnpm
+- Een Supabase project
 
-Open `http://localhost:3000`.
+## 🛠️ Installatie
 
-## Build & Production
+1. Clone de repository:
+   ```bash
+   git clone https://github.com/Yandievss/archon.ai.git
+   cd archon.ai
+   ```
 
-```bash
-npm run build
-npm run start
-```
+2. Installeer afhankelijkheden:
+   ```bash
+   npm install
+   ```
 
-Optioneel (logs naar `dev.log` / `server.log`):
+3. Configureer omgevingsvariabelen:
+   Maak een `.env.local` bestand aan met de volgende variabelen:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=jouw-supabase-url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=jouw-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=jouw-service-role-key
+   OPENAI_API_KEY=jouw-openai-key
+   GEMINI_API_KEY=jouw-gemini-key
+   ```
 
-```bash
-npm run dev:log
-npm run start:log
-```
+4. Start de ontwikkelomgeving:
+   ```bash
+   npm run dev
+   ```
 
-## Handige scripts
+Open [http://localhost:3000](http://localhost:3000) in je browser.
 
-- `npm run lint`
-- `npm run typecheck`
-- `npm run e2e` (Playwright)
-- `npm run e2e:ui`
-- `npm run db:generate`
-- `npm run db:migrate`
-- `npm run db:push`
+## 🏗️ Projectstructuur
 
-## E2E Tests (Playwright)
+- `src/app/`: Next.js routes en API endpoints.
+- `src/components/`: Herbruikbare UI componenten en dashboard onderdelen.
+- `src/hooks/`: Custom React hooks voor data fetching en state management.
+- `src/lib/`: Utility functies en gedeelde configuraties.
+- `supabase/`: Database migraties en schema definities.
 
-Eenmalig (Chromium installeren):
+## 🧪 Scripts
 
-```bash
-npx playwright install chromium
-```
+- `npm run lint`: Voer ESLint uit voor code kwaliteit.
+- `npm run typecheck`: Controleer TypeScript types.
+- `npm run build`: Bouw de applicatie voor productie.
+- `npm run e2e`: Voer end-to-end tests uit met Playwright.
+- `npm run db:push`: Push het Prisma schema naar de database.
 
-Run:
+## 📄 Licentie
 
-```bash
-npm run e2e
-```
-
-## Projectstructuur (kort)
-
-```text
-src/
-  app/                 Next.js routes + layout
-  components/          UI + dashboard onderdelen
-  hooks/               React hooks
-  lib/                 helpers/utils
-```
-
-## Secrets
-
-Zet API keys in `.env.local` en commit nooit secrets. Roteer keys die per ongeluk gedeeld/gelekt zijn.
+Dit project is privé eigendom.

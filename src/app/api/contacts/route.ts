@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
+import { handleApiError, resolveCompanyId } from '@/lib/api-utils'
 
 const CreateContactSchema = z.object({
   voornaam: z.string().trim().min(1, 'Voornaam is verplicht'),
@@ -30,53 +30,10 @@ function normalizeContactRow(row: any) {
   }
 }
 
-async function resolveCompanyId(
-  supabase: ReturnType<typeof getSupabaseAdmin>,
-  bedrijf: string | null | undefined,
-  requestedCompanyId: number | null | undefined
-): Promise<number | null> {
-  if (requestedCompanyId != null) return requestedCompanyId
-  if (!bedrijf || !bedrijf.trim()) return null
-
-  const trimmedName = bedrijf.trim()
-  const supabaseAny = supabase as any
-
-  const existingCompany = await supabaseAny
-    .from('bedrijven')
-    .select('id')
-    .ilike('naam', trimmedName)
-    .order('id', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (existingCompany.error) throw existingCompany.error
-  if (existingCompany.data?.id != null) return Number(existingCompany.data.id)
-
-  const createdCompany = await supabaseAny
-    .from('bedrijven')
-    .insert([{ naam: trimmedName }])
-    .select('id')
-    .single()
-
-  if (createdCompany.error) throw createdCompany.error
-
-  return Number(createdCompany.data.id)
-}
-
 export async function GET() {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
   try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
-  try {
-    const result = await (supabase as any)
+    const supabase = getSupabaseAdmin()
+    const result = await supabase
       .from('contacten')
       .select('id, voornaam, achternaam, email, telefoon, functie, bedrijf_id, created_at, updated_at, bedrijven:bedrijf_id ( id, naam )')
       .order('created_at', { ascending: false })
@@ -86,26 +43,13 @@ export async function GET() {
 
     return NextResponse.json((result.data ?? []).map(normalizeContactRow))
   } catch (error) {
-    console.error('Error fetching contacts:', error)
-    return NextResponse.json({ error: 'Kon contacten niet laden.' }, { status: 500 })
+    return handleApiError(error, 'Kon contacten niet laden')
   }
 }
 
 export async function POST(request: Request) {
-  let supabase: ReturnType<typeof getSupabaseAdmin>
-
-  try {
-    supabase = getSupabaseAdmin()
-  } catch {
-    return NextResponse.json(
-      { error: 'Supabase admin client is niet geconfigureerd.' },
-      { status: 503 }
-    )
-  }
-
   try {
     const body = await request.json()
-
     const validated = CreateContactSchema.parse({
       voornaam: body?.voornaam ?? body?.firstName,
       achternaam: body?.achternaam ?? body?.lastName,
@@ -116,9 +60,14 @@ export async function POST(request: Request) {
       bedrijfId: body?.bedrijfId ?? body?.companyId ?? null,
     })
 
-    const bedrijfId = await resolveCompanyId(supabase, validated.bedrijf, validated.bedrijfId)
+    const supabase = getSupabaseAdmin()
+    const bedrijfId = await resolveCompanyId({
+      supabase,
+      companyName: validated.bedrijf,
+      requestedCompanyId: validated.bedrijfId
+    })
 
-    const result = await (supabase as any)
+    const result = await supabase
       .from('contacten')
       .insert([
         {
@@ -143,8 +92,6 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
-
-    console.error('Error creating contact:', error)
-    return NextResponse.json({ error: 'Kon contact niet aanmaken.' }, { status: 500 })
+    return handleApiError(error, 'Kon contact niet aanmaken')
   }
 }

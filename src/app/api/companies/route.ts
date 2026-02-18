@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
+import { handleApiError } from '@/lib/api-utils'
 
 const CompanySchema = z.object({
   name: z.string().min(1, 'Naam is verplicht'),
@@ -30,7 +30,7 @@ async function listSupabaseCompanies(params: {
   search: string | null
 }) {
   const { status, sector, search } = params
-  const supabase = getSupabaseAdmin() as any
+  const supabase = getSupabaseAdmin()
 
   const bedrijvenResult = await supabase.from('bedrijven').select('id, naam, stad, email, created_at, btw')
 
@@ -38,7 +38,7 @@ async function listSupabaseCompanies(params: {
 
   const normalizedSearch = search?.trim().toLowerCase() ?? ''
 
-  const payload = ((bedrijvenResult.data ?? []) as any[])
+  const payload = (bedrijvenResult.data || [])
     .map((bedrijf) => {
       const computedStatus = deriveStatus(bedrijf.created_at ?? null)
 
@@ -84,20 +84,7 @@ export async function GET(request: Request) {
     const payload = await listSupabaseCompanies({ status, sector, search })
     return NextResponse.json(payload)
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes('Supabase admin keys') || error.message.includes('missing'))
-    ) {
-      return NextResponse.json(
-        { error: 'Supabase admin client is niet geconfigureerd.' },
-        { status: 503 }
-      )
-    }
-    console.error('Error fetching companies:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch companies' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Kon bedrijven niet laden')
   }
 }
 
@@ -106,7 +93,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validatedData = CompanySchema.parse(body)
 
-    const supabase = getSupabaseAdmin() as any
+    const supabase = getSupabaseAdmin()
     const { data, error } = await supabase
       .from('bedrijven')
       .insert([
@@ -140,23 +127,10 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Validation error', details: error.issues },
+        { error: 'Validatiefout', details: error.issues },
         { status: 400 }
       )
     }
-    if (
-      error instanceof Error &&
-      (error.message.includes('Supabase admin keys') || error.message.includes('missing'))
-    ) {
-      return NextResponse.json(
-        { error: 'Supabase admin client is niet geconfigureerd.' },
-        { status: 503 }
-      )
-    }
-    console.error('Error creating company:', error)
-    return NextResponse.json(
-      { error: 'Failed to create company' },
-      { status: 500 }
-    )
+    return handleApiError(error, 'Kon bedrijf niet aanmaken')
   }
 }

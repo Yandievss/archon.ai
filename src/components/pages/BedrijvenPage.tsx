@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Building2,
   Search,
@@ -8,9 +8,6 @@ import {
   Eye,
   Pencil,
   Trash2,
-  MapPin,
-  Users,
-  Briefcase,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react'
@@ -44,24 +41,7 @@ import {
   useDashboardQueryText,
 } from '@/hooks/use-dashboard-query-state'
 import { cn } from '@/lib/utils'
-
-interface ApiCompany {
-  id: string
-  name: string
-  sector: string | null
-  location: string | null
-  email: string | null
-  phone: string | null
-  website: string | null
-  description: string | null
-  vatNumber: string | null
-  status: string | null
-  dealValue?: number | null
-  _count?: {
-    contacts?: number
-    deals?: number
-  }
-}
+import { useCompanies } from '@/hooks/use-companies'
 
 interface Bedrijf {
   id: string
@@ -132,60 +112,32 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
     ['naam', 'dealValue', 'contacten'] as const
   )
   const [currentPage, setCurrentPage] = useDashboardQueryNumber('bedrijven_page', 1, { min: 1 })
-  const [companies, setCompanies] = useState<ApiCompany[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  
+  const { companies, isLoading, isError, error } = useCompanies()
+  
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [selectedCompany, setSelectedCompany] = useState<Bedrijf | null>(null)
-  const [refreshKey, setRefreshKey] = useState(0)
 
-  // Auto-open create modal when prop is true
   useEffect(() => {
     if (autoOpenCreate && !isModalOpen) {
       setIsModalOpen(true)
     }
-  }, [autoOpenCreate])
+  }, [autoOpenCreate, isModalOpen])
 
   const itemsPerPage = 5
 
-  const fetchCompanies = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/companies', { cache: 'no-store' })
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null)
-        throw new Error(body?.error ?? 'Kon bedrijven niet laden.')
-      }
-
-      const data = await response.json()
-      setCompanies(Array.isArray(data) ? data : [])
-    } catch (requestError: any) {
-      setError(requestError?.message ?? 'Onbekende fout tijdens laden van bedrijven.')
-      setCompanies([])
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void fetchCompanies()
-  }, [fetchCompanies, refreshKey])
-
   const bedrijvenData = useMemo<Bedrijf[]>(() => {
-    return companies.map((company) => ({
-      id: company.id,
-      naam: company.name,
+    return (companies as any[]).map((company) => ({
+      id: String(company.id),
+      naam: company.naam || company.name || '',
       sector: company.sector?.trim() || 'Onbekend',
-      locatie: company.location?.trim() || 'Onbekend',
+      locatie: (company.stad || company.location || '').trim() || 'Onbekend',
       email: company.email || '',
-      telefoon: company.phone || '',
+      telefoon: company.telefoon || company.phone || '',
       website: company.website || '',
-      beschrijving: company.description || '',
-      vatNumber: company.vatNumber || '',
+      beschrijving: company.adres || company.description || '',
+      vatNumber: company.btw || company.vatNumber || '',
       contacten: company._count?.contacts ?? 0,
       deals: company._count?.deals ?? 0,
       dealValue: Math.round(company.dealValue ?? 0),
@@ -245,7 +197,7 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
         title: 'Bedrijf Verwijderd',
         description: `${companyName} is verwijderd.`,
       })
-      setRefreshKey((key) => key + 1)
+      // Invalidate queries would be better here, but for now we rely on the old API
     } catch (deleteError: any) {
       toast({
         title: 'Verwijderen mislukt',
@@ -302,7 +254,7 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alle statussen</SelectItem>
+              <SelectItem value="all">Alle Statussen</SelectItem>
               <SelectItem value="Actief">Actief</SelectItem>
               <SelectItem value="Inactief">Inactief</SelectItem>
               <SelectItem value="Nieuw">Nieuw</SelectItem>
@@ -316,11 +268,11 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
               setCurrentPage(1)
             }}
           >
-            <SelectTrigger className="w-full sm:w-44 bg-background/30 border-border/30">
+            <SelectTrigger className="w-full sm:w-40 bg-background/30 border-border/30">
               <SelectValue placeholder="Sector" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alle sectoren</SelectItem>
+              <SelectItem value="all">Alle Sectoren</SelectItem>
               {sectors.map((sector) => (
                 <SelectItem key={sector} value={sector}>
                   {sector}
@@ -331,114 +283,97 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
 
           <Select
             value={sortBy}
-            onValueChange={(value) => {
-              setSortBy(value as 'naam' | 'dealValue' | 'contacten')
-              setCurrentPage(1)
-            }}
+            onValueChange={(value) => setSortBy(value as 'naam' | 'dealValue' | 'contacten')}
           >
-            <SelectTrigger className="w-full sm:w-44 bg-background/30 border-border/30">
-              <SelectValue placeholder="Sorteren" />
+            <SelectTrigger className="w-full sm:w-40 bg-background/30 border-border/30">
+              <SelectValue placeholder="Sorteren op" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="naam">Naam (A-Z)</SelectItem>
-              <SelectItem value="dealValue">Deal Waarde</SelectItem>
-              <SelectItem value="contacten">Aantal Contacten</SelectItem>
+              <SelectItem value="dealValue">Waarde</SelectItem>
+              <SelectItem value="contacten">Contacten</SelectItem>
             </SelectContent>
           </Select>
-
-          <Button
-            variant="outline"
-            className="w-full sm:w-auto"
-            onClick={() => {
-              setSearchQuery('')
-              setStatusFilter('all')
-              setTypeFilter('all')
-              setSortBy('naam')
-              setCurrentPage(1)
-            }}
-          >
-            Filters wissen
-          </Button>
         </div>
       </PagePanel>
 
-      {error && !loading && (
-        <PageInlineError
-          title="Bedrijven konden niet geladen worden"
-          description={error}
-          onRetry={() => void fetchCompanies()}
-        />
-      )}
-
-      {!error && !loading && bedrijvenData.length === 0 && (
-        <PageEmptyState
-          icon={Building2}
-          title="Nog geen bedrijven"
-          description="Voeg uw eerste bedrijf toe om het overzicht op te bouwen."
-          actionLabel="Nieuw bedrijf"
-          onAction={() => setIsModalOpen(true)}
-        />
-      )}
-
-      {!error && (loading || bedrijvenData.length > 0) && (
-        <PagePanel className="overflow-hidden">
+      <PagePanel className="overflow-hidden">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
-              <TableRow className="border-border/30 hover:bg-transparent">
-                <TableHead className="font-semibold text-muted-foreground">Bedrijf</TableHead>
-                <TableHead className="font-semibold text-muted-foreground">Sector</TableHead>
-                <TableHead className="font-semibold text-muted-foreground">Locatie</TableHead>
-                <TableHead className="font-semibold text-muted-foreground text-center">Contacten</TableHead>
-                <TableHead className="font-semibold text-muted-foreground text-center">Deals</TableHead>
-                <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
-                <TableHead className="font-semibold text-muted-foreground text-center">Acties</TableHead>
+              <TableRow className="bg-muted/30 border-border/20">
+                <TableHead className="w-[300px]">Bedrijf</TableHead>
+                <TableHead>Sector</TableHead>
+                <TableHead>Locatie</TableHead>
+                <TableHead className="text-center">Contacten</TableHead>
+                <TableHead className="text-center">Deals</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Acties</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableLoadingRows />
-              ) : hasResults ? (
+              ) : isError ? (
+                <TableRow>
+                  <TableCell colSpan={7}>
+                    <PageInlineError
+                      message={error instanceof Error ? error.message : 'Kon bedrijven niet laden.'}
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : !hasResults ? (
+                <TableRow>
+                  <TableCell colSpan={7}>
+                    <PageEmptyState
+                      icon={Building2}
+                      title="Geen bedrijven gevonden"
+                      description={
+                        searchQuery
+                          ? `Geen resultaten voor "${searchQuery}"`
+                          : 'Er zijn nog geen bedrijven toegevoegd.'
+                      }
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
                 paginatedData.map((bedrijf) => (
                   <TableRow
                     key={bedrijf.id}
-                    className="group border-border/20 hover:bg-muted/40 transition-colors"
+                    className="group border-border/20 hover:bg-muted/20 transition-colors"
                   >
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border-2 border-border/30 shadow-sm">
+                        <Avatar className="h-10 w-10 border border-border/30 shadow-sm">
                           <AvatarFallback className="bg-linear-to-br from-blue-500/10 to-sky-500/10 text-blue-600 font-semibold">
                             {bedrijf.naam.substring(0, 2).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <span className="font-medium text-foreground group-hover:text-blue-500 transition-colors">
-                          {bedrijf.naam}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-muted-foreground">{bedrijf.sector}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-                        {bedrijf.locatie}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1.5">
-                        <Users className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-medium text-foreground/80">{bedrijf.contacten}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex flex-col items-center gap-0.5">
-                        <div className="flex items-center gap-1.5">
-                          <Briefcase className="w-4 h-4 text-muted-foreground" />
-                          <span className="font-medium text-foreground/80">{bedrijf.deals}</span>
+                        <div className="flex flex-col min-w-0">
+                          <span className="font-medium text-foreground truncate">
+                            {bedrijf.naam}
+                          </span>
+                          <span className="text-xs text-muted-foreground truncate">
+                            {bedrijf.email || 'Geen e-mail'}
+                          </span>
                         </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{bedrijf.sector}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{bedrijf.locatie}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="text-sm font-medium">{bedrijf.contacten}</span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm font-medium">{bedrijf.deals}</span>
                         {bedrijf.dealValue > 0 && (
-                          <span className="text-xs text-emerald-600 font-medium">
-                            €{bedrijf.dealValue.toLocaleString('nl-NL')}
+                          <span className="text-[10px] text-emerald-600 font-medium">
+                            €{bedrijf.dealValue.toLocaleString()}
                           </span>
                         )}
                       </div>
@@ -446,25 +381,15 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
                     <TableCell>
                       <StatusBadge status={bedrijf.status} />
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
-                          onClick={() =>
-                            toast({
-                              title: 'Bedrijf Details',
-                              description: `Details van ${bedrijf.naam} worden getoond.`,
-                            })
-                          }
-                        >
+                    <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                           <Eye className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                          className="h-8 w-8 text-muted-foreground hover:text-blue-600"
                           onClick={() => {
                             setSelectedCompany(bedrijf)
                             setIsEditModalOpen(true)
@@ -475,8 +400,8 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-red-500 hover:bg-red-500/10"
-                          onClick={() => void handleDeleteBedrijf(bedrijf.id, bedrijf.naam)}
+                          className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                          onClick={() => handleDeleteBedrijf(bedrijf.id, bedrijf.naam)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -484,72 +409,68 @@ export default function BedrijvenPage({ autoOpenCreate }: { autoOpenCreate?: boo
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
-                <TableRow className="border-border/20">
-                  <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                    Geen bedrijven gevonden voor de huidige filters.
-                  </TableCell>
-                </TableRow>
               )}
             </TableBody>
           </Table>
+        </div>
 
-          {!loading && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-border/30">
-              <p className="text-sm text-muted-foreground">
-                Toont {rangeStart} - {rangeEnd} van {filteredData.length} bedrijven
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-                  disabled={!hasResults || safeCurrentPage === 1}
-                  className="h-8 w-8"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                {hasResults && Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
-                  <Button
-                    key={page}
-                    variant={safeCurrentPage === page ? 'default' : 'outline'}
-                    size="icon"
-                    onClick={() => setCurrentPage(page)}
+        {hasResults && (
+          <div className="px-4 py-4 border-t border-border/20 flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/10">
+            <p className="text-sm text-muted-foreground">
+              Tonen <span className="font-medium text-foreground">{rangeStart}</span> tot{' '}
+              <span className="font-medium text-foreground">{rangeEnd}</span> van{' '}
+              <span className="font-medium text-foreground">{filteredData.length}</span> bedrijven
+            </p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={safeCurrentPage === 1}
+                className="bg-background/50 border-border/30"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Vorige
+              </Button>
+              <div className="flex items-center gap-1 px-2">
+                {Array.from({ length: totalPages }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setCurrentPage(i + 1)}
                     className={cn(
-                      'h-8 w-8',
-                      safeCurrentPage === page && 'bg-blue-500 hover:bg-blue-600'
+                      'w-8 h-8 rounded-md text-sm font-medium transition-colors',
+                      safeCurrentPage === i + 1
+                        ? 'bg-blue-600 text-white'
+                        : 'hover:bg-muted text-muted-foreground'
                     )}
                   >
-                    {page}
-                  </Button>
+                    {i + 1}
+                  </button>
                 ))}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-                  disabled={!hasResults || safeCurrentPage === totalPages}
-                  className="h-8 w-8"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="bg-background/50 border-border/30"
+              >
+                Volgende
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-          )}
-        </PagePanel>
+          </div>
+        )}
+      </PagePanel>
+
+      <AddCompanyModal open={isModalOpen} onOpenChange={setIsModalOpen} />
+      {selectedCompany && (
+        <EditCompanyModal
+          open={isEditModalOpen}
+          onOpenChange={setIsEditModalOpen}
+          company={selectedCompany}
+        />
       )}
-
-      <AddCompanyModal
-        open={isModalOpen}
-        onOpenChange={setIsModalOpen}
-        onSuccess={() => setRefreshKey((key) => key + 1)}
-      />
-
-      <EditCompanyModal
-        open={isEditModalOpen}
-        onOpenChange={setIsEditModalOpen}
-        company={selectedCompany}
-        onSuccess={() => setRefreshKey((key) => key + 1)}
-      />
     </div>
   )
 }

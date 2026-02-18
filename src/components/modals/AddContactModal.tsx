@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast } from '@/hooks/use-toast'
+import { useContacts } from '@/hooks/use-contacts'
 
 interface AddContactModalProps {
   open: boolean
@@ -17,7 +17,7 @@ interface AddContactModalProps {
 }
 
 export default function AddContactModal({ open, onOpenChange, onSuccess }: AddContactModalProps) {
-  const [loading, setLoading] = useState(false)
+  const { createContact, isCreating } = useContacts()
   const [formData, setFormData] = useState({
     voornaam: '',
     achternaam: '',
@@ -67,52 +67,22 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!formData.voornaam.trim() || !formData.achternaam.trim()) {
-      toast({
-        title: 'Validatiefout',
-        description: 'Voornaam en achternaam zijn verplicht.',
-        variant: 'destructive',
-      })
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const response = await fetch('/api/contacts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          voornaam: formData.voornaam.trim(),
-          achternaam: formData.achternaam.trim(),
-          email: formData.email.trim() || null,
-          telefoon: formData.telefoon.trim() || null,
-          bedrijf: formData.bedrijf.trim() || null,
-          functie: formData.functie.trim() || null,
-          tags,
-        }),
-      })
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null)
-        const validationDetail = body?.details?.[0]?.message
-        throw new Error(validationDetail || body?.error || 'Kon contact niet opslaan.')
+    createContact({
+      voornaam: formData.voornaam.trim(),
+      achternaam: formData.achternaam.trim(),
+      email: formData.email.trim() || null,
+      telefoon: formData.telefoon.trim() || null,
+      bedrijf: formData.bedrijf.trim() || null,
+      functie: formData.functie.trim() || null,
+    }, {
+      onSuccess: (result) => {
+        if (result.success) {
+          resetForm()
+          onOpenChange(false)
+          onSuccess?.()
+        }
       }
-
-      resetForm()
-      onOpenChange(false)
-      onSuccess?.()
-    } catch (error: any) {
-      toast({
-        title: 'Fout',
-        description: error?.message ?? 'Er is een fout opgetreden bij het aanmaken van het contact.',
-        variant: 'destructive',
-      })
-    } finally {
-      setLoading(false)
-    }
+    })
   }
 
   return (
@@ -289,16 +259,16 @@ export default function AddContactModal({ open, onOpenChange, onSuccess }: AddCo
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={loading}
+              disabled={isCreating}
             >
               Annuleren
             </Button>
             <Button
               type="submit"
-              disabled={loading || !formData.voornaam.trim() || !formData.achternaam.trim()}
+              disabled={isCreating || !formData.voornaam.trim() || !formData.achternaam.trim()}
               className="bg-linear-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
             >
-              {loading ? 'Opslaan...' : 'Contact Aanmaken'}
+              {isCreating ? 'Opslaan...' : 'Contact Aanmaken'}
             </Button>
           </div>
         </form>

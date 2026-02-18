@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
@@ -18,7 +17,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { toast } from '@/hooks/use-toast'
+import { useCompanies } from '@/hooks/use-companies'
 
 const companyFormSchema = z.object({
   name: z.string().min(1, 'Bedrijfsnaam is vereist'),
@@ -44,7 +43,7 @@ export default function AddCompanyModal({
   onOpenChange,
   onSuccess,
 }: AddCompanyModalProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { createCompany, isCreating } = useCompanies()
 
   const form = useForm<CompanyFormValues>({
     resolver: zodResolver(companyFormSchema),
@@ -61,50 +60,15 @@ export default function AddCompanyModal({
   })
 
   async function onSubmit(values: CompanyFormValues) {
-    setIsSubmitting(true)
-    try {
-      const payload = {
-        name: values.name,
-        sector: values.sector || undefined,
-        location: values.location || undefined,
-        email: values.email || undefined,
-        vatNumber: values.vatNumber || undefined,
-        phone: values.phone || undefined,
-        website: values.website || undefined,
-        description: values.description || undefined,
-        status: 'Actief',
+    createCompany(values, {
+      onSuccess: (result) => {
+        if (result.success) {
+          form.reset()
+          onOpenChange(false)
+          onSuccess?.()
+        }
       }
-
-      const response = await fetch('/api/companies', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      })
-
-      if (!response.ok) {
-        const body = await response.json().catch(() => null)
-        const details = body?.details?.[0]?.message
-        throw new Error(details || body?.error || 'Kon bedrijf niet opslaan.')
-      }
-
-      toast({
-        title: 'Succes!',
-        description: `Bedrijf ${values.name} is aangemaakt.`,
-      })
-      form.reset()
-      onOpenChange(false)
-      onSuccess?.()
-    } catch (error: any) {
-      toast({
-        title: 'Fout',
-        description: error?.message ?? 'Kon bedrijf niet aanmaken.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+    })
   }
 
   return (
@@ -127,7 +91,6 @@ export default function AddCompanyModal({
                   <FormLabel>Naam *</FormLabel>
                   <FormControl>
                     <Input placeholder="Bedrijfsnaam" {...field} required aria-required={true} autoFocus />
-                    {/* name field is required per schema */}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -248,12 +211,12 @@ export default function AddCompanyModal({
                 type="button"
                 variant="outline"
                 onClick={() => onOpenChange(false)}
-                disabled={isSubmitting}
+                disabled={isCreating}
               >
                 Annuleren
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isCreating}>
+                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Bedrijf Toevoegen
               </Button>
             </div>

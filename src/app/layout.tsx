@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 export const metadata: Metadata = {
   title: "ArchonPro - Business Suite Dashboard",
@@ -36,9 +37,11 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground">
         <a href="#main-content" className="skip-to-content">Ga naar inhoud</a>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <main id="main-content" tabIndex={-1} className="focus:outline-none">
-            {children}
-          </main>
+          <QueryProvider>
+            <main id="main-content" tabIndex={-1} className="focus:outline-none">
+              {children}
+            </main>
+          </QueryProvider>
         </ThemeProvider>
         <Toaster />
       </body>

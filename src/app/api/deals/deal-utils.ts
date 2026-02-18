@@ -41,7 +41,8 @@ export function selectColumnsForVariant(variant: DealsSchemaVariant) {
     return 'id, titel, waarde, stadium, deadline, kans, bedrijf_id, notities, created_at'
   }
 
-  return 'id, title, amount, stage, probability, company_id, notes, created_at'
+  // English schema: notes and deadline may not exist in all deployments — omit to avoid 500
+  return 'id, title, amount, stage, probability, company_id, created_at'
 }
 
 export function normalizeDealRow(row: any) {

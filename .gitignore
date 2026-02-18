@@ -74,3 +74,8 @@ db/*.db
 
 # Project specific
 contacten-page-stats.png
+
+# Local editor/tooling
+.cursor/
+.antigravity/
+start-dev.*

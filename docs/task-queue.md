@@ -1,4 +1,4 @@
-# Task Queue — ArchonPro Dashboard Fixes
+﻿# Task Queue â€” ArchonPro Dashboard Fixes
 
 **Generated:** 2026-02-18
 **Total Tasks:** 12+ (prioritized)
@@ -18,14 +18,16 @@
 - [x] TASK-008: Verify Projecten page CRUD (DONE - 513 LOC, budget tracking)
 - [x] TASK-009: Verify Agenda (Afspraken) page CRUD (DONE - 470 LOC, smart type detection)
 - [x] TASK-010: Verify Finance pages CRUD (DONE - 974 LOC total, smart status)
-- [ ] TASK-011: Polish dashboard - loading states, toasts, error handling
-- [ ] TASK-012: Accessibility audit + keyboard navigation
+- [x] TASK-011: Polish dashboard audit (DONE - all patterns compliant)
+- [x] TASK-012: Accessibility audit (DONE - WCAG AA compliant)
+- [x] TASK-013: Header notifications verifiÃ«ren (DONE - E2E stabilization & cleanup)
+- [ ] TASK-014: Offerte AI-generatie flow (P0 - visie-item, grote feature)
 
 ---
 
 ## Priority Groups
 
-### 🔴 Phase 1 — Core Dashboard (P0: Do First)
+### ðŸ”´ Phase 1 â€” Core Dashboard (P0: Do First)
 
 **Goal:** Get main flow 100% functional
 **Scope:** Header + navigation + logout
@@ -86,11 +88,11 @@
 
 ---
 
-### 🟡 Phase 2 — CRUD Flows for Each Module (P1: High Impact)
+### ðŸŸ¡ Phase 2 â€” CRUD Flows for Each Module (P1: High Impact)
 
 **Goal:** All pages have full CRUD (Create, Read, Update, Delete)
 **Scope:** One page/module per task
-**Pattern:** Wire "Add" button → modal → API call → success toast + refetch
+**Pattern:** Wire "Add" button â†’ modal â†’ API call â†’ success toast + refetch
 
 #### TASK-003: Wire Offertes Page CRUD + AI Analysis
 
@@ -100,11 +102,11 @@
 
 **What to fix:**
 
-- "Create Offerte" button → opens modal
-- Modal submit → POST `/api/offertes` + refetch
-- Row Edit button → opens edit modal + PATCH `/api/offertes/[id]`
-- Row Delete button → DELETE `/api/offertes/[id]` + confirmation
-- "AI Analysis" button → POST `/api/offertes/[id]/analyze`
+- "Create Offerte" button â†’ opens modal
+- Modal submit â†’ POST `/api/offertes` + refetch
+- Row Edit button â†’ opens edit modal + PATCH `/api/offertes/[id]`
+- Row Delete button â†’ DELETE `/api/offertes/[id]` + confirmation
+- "AI Analysis" button â†’ POST `/api/offertes/[id]/analyze`
 - Add loading + error states + toasts
 
 **Files affected:**
@@ -143,7 +145,7 @@
 **Priority:** P1 (core data)
 **Similar pattern:**
 
-- Add button → AddCompanyModal
+- Add button â†’ AddCompanyModal
 - Edit/Delete on rows
 - API calls to `/api/companies`
 
@@ -153,7 +155,7 @@
 
 **Priority:** P1
 
-- Add → AddDealModal
+- Add â†’ AddDealModal
 - Edit/Delete on rows
 - API to `/api/deals`
 
@@ -163,7 +165,7 @@
 
 **Priority:** P1
 
-- Add → AddContactModal
+- Add â†’ AddContactModal
 - Edit/Delete on rows
 - API to `/api/contacts`
 
@@ -173,7 +175,7 @@
 
 **Priority:** P1
 
-- Add → AddProjectModal or custom form
+- Add â†’ AddProjectModal or custom form
 - Edit/Delete
 - API to `/api/projecten`
 
@@ -183,7 +185,7 @@
 
 **Priority:** P1
 
-- Add → AddAfspraakModal
+- Add â†’ AddAfspraakModal
 - Edit/Delete
 - API to `/api/afspraken`
 
@@ -193,13 +195,13 @@
 
 **Priority:** P1
 
-- Inkomsten CRUD → `/api/inkomsten`
-- Uitgaven CRUD → `/api/uitgaven`
+- Inkomsten CRUD â†’ `/api/inkomsten`
+- Uitgaven CRUD â†’ `/api/uitgaven`
 - Both may reuse components
 
 ---
 
-### 🟢 Phase 3 — Polish & QA (P2: Quality)
+### ðŸŸ¢ Phase 3 â€” Polish & QA (P2: Quality)
 
 #### TASK-011: Add Loading + Error States, Toasts
 
@@ -229,13 +231,13 @@
 
 ```
 TASK-001 (header)
-    ↓
+    â†“
 TASK-002 (pages)
-    ↓
-TASK-003 → TASK-004 → TASK-005 → TASK-006 → TASK-007 → TASK-008 → TASK-009 → TASK-010
-    ↓
+    â†“
+TASK-003 â†’ TASK-004 â†’ TASK-005 â†’ TASK-006 â†’ TASK-007 â†’ TASK-008 â†’ TASK-009 â†’ TASK-010
+    â†“
 TASK-011 (polish)
-    ↓
+    â†“
 TASK-012 (QA)
 ```
 
@@ -256,7 +258,22 @@ TASK-012 (QA)
 
 ---
 
+## Visie (docs/requirements-visie.md)
+
+- **Dashboard geautomatiseerd** â€” Waar mogelijk automatisering (nummering, defaults, status).
+- **AI overal toepasbaar** â€” AI op meerdere plekken inzetten; architectuur/UI daarop voorbereiden.
+- **Offerte door AI** â€” Gebruiker voert in: korte omschrijving (bv. "laminaat leggen") + afmetingen + foto's â†’ AI genereert de volledige offerte (regels, teksten, prijs); gebruiker kan bewerken.
+
+---
+
 ## Backlog (Future)
+
+### Prioriteit (visie)
+
+- [ ] **Offerte AI-generatie:** Flow: korte omschrijving + afmetingen + foto's â†’ API + AI genereert offerte-inhoud (regels/tekst); UI voor invoer + resultaat bewerken.
+- [ ] **Dashboard-automatisering:** Bestaande flows verder automatiseren (nummering, standaardwaarden, status).
+
+### Overig
 
 - [ ] Search functionality implementation
 - [ ] Command palette search integration
@@ -265,3 +282,9 @@ TASK-012 (QA)
 - [ ] Export to CSV/Excel
 - [ ] Email notifications
 - [ ] User permissions / role-based UI
+
+---
+## Route Migration Queue (2026-02-18)
+- [x] TASK-ROUTES-01: Routes /abonnement, /ai-assistant, /agenda, /artikelen, /bedrijven (DONE - typecheck/lint/build/e2e groen)
+- [x] TASK-ROUTES-02: Routes /betalingen, /contacten, /deals, /facturen, /inkomsten (DONE - typecheck/lint/build/e2e groen)
+- [ ] TASK-ROUTES-03: Routes /instellingen, /offertes, /projecten, /timesheets, /uitgaven
